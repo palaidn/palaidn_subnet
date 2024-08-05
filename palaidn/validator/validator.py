@@ -289,7 +289,7 @@ class PalaidnValidator(BaseNeuron):
                     bt.logging.warning(
                         f"miner {uid} fetched transactions and they will be saved: {transaction_data}"
                     )
-                    self.fraud_data.insert_into_database(base_address, transaction_data)
+                    self.fraud_data.insert_into_database(base_address, transaction_data, self.metagraph.hotkeys)
                 else:
                     bt.logging.warning(
                         f"miner {uid} did not fetch any trasactions and will be skipped."

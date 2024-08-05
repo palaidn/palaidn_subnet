@@ -139,7 +139,7 @@ async def main(validator: PalaidnValidator):
                     )
             if not responses:
                 print("No responses received. Sleeping for 30 seconds.")
-                time.sleep(10)
+                time.sleep(30)
 
             # Process the responses
             if responses and any(responses):
@@ -186,7 +186,7 @@ async def main(validator: PalaidnValidator):
 
             # Sleep for a duration equivalent to the block time (i.e., time between successive blocks).
             bt.logging.debug("Sleeping for: 30 seconds")
-            await asyncio.sleep(10)
+            await asyncio.sleep(30)
 
         except TimeoutError as e:
             bt.logging.error(f"Error in main loop: {str(e)}")

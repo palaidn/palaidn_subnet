@@ -42,7 +42,7 @@ class FraudData:
         # Run migrations after creating the initial tables
         run_migrations(self.db_name)
 
-    def insert_into_database(self, base_address, transaction_data):
+    def insert_into_database(self, base_address, transaction_data, hotkeys):
         conn = sqlite3.connect(self.db_name)
         c = conn.cursor()
 
@@ -55,10 +55,12 @@ class FraudData:
                 except ValueError:
                     amount = 0.0
 
+                minerWallet = hotkeys[int(tx.minerID)]
+
                 # Check if the transaction is already in the database
                 c.execute(
                     """SELECT COUNT(*) FROM wallet_transactions WHERE miner_wallet = ? AND transaction_hash = ?""",
-                    (tx.minerWallet, tx.transaction_hash)
+                    (minerWallet, tx.transaction_hash)
                 )
                 exists = c.fetchone()[0]
 
@@ -67,7 +69,7 @@ class FraudData:
                         """INSERT INTO wallet_transactions (
                             id, wallet_address, base_address, transaction_hash, transaction_date, 
                             amount, token_symbol, category, token_address, is_fraudulent, scanID, minerID, miner_wallet, scan_date, sender, receiver)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?)""",
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?)""",
                         (
                             str(uuid.uuid4()),
                             tx.sender,
@@ -80,7 +82,7 @@ class FraudData:
                             tx.token_address,
                             tx.scanID,
                             tx.minerID,
-                            tx.minerWallet,
+                            minerWallet,
                             tx.scanDate,
                             tx.sender,
                             tx.receiver
