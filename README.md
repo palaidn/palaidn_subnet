@@ -134,11 +134,17 @@ If you encounter any issues during the installation process, refer to the troubl
 - Run your local Subtensor, instructions on how to install Subtensor locally can be found here: [Subtensor Installation Guide](https://github.com/opentensor/subtensor/blob/main/docs/running-subtensor-locally.md)
 
 ```bash
-git clone https://github.com/palaidn/palaidn-subnet.git
-cd palaidn-subnet
+git clone https://github.com/palaidn/palaidn_subnet.git
+cd palaidn_subnet
 python3 -m pip install -e .
 python3 setup.py install_lib
 python3 setup.py build
+```
+
+Make sure you set up an Alchemy account and PayPangea account. Once you have them set up, run the follwing command from palaidn_subnet directory
+
+```bash
+./scripts/init.sh
 ```
 
 **After registration, you can start the miner script using the following command:**
