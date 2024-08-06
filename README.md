@@ -95,8 +95,8 @@ Miners are motivated to outperform each other in identifying genuine frauds, ens
 # How to Mine TAO on Subnet 45
 1. Create a Bittensor wallet (coldkey & hotkey).
 2. Register your hotkey to Subnet 45.
-3. Create a PayPangea account [PayPangea.com](https://paypangea.com) and get API key.
-3. Create a Alchemy account [PayPangea.com](https://paypangea.com) and get API key.
+3. Create a PayPangea account [PayPangea.com](https://paypangea.com) and get API key. Paypangea is a free decentralised wallet that we use for web3 authentication. You will find your API key under Profile settings on the top right corner.
+3. Create a Alchemy account [Alchmemy.com](https://www.alchemy.com/) and get API key.
 5. Hardware requirements:
 - VPS with Ubuntu v.22 or higher
 - Python v3.12 or higher
