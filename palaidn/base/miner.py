@@ -353,8 +353,9 @@ class PalaidnMiner(BaseNeuron):
 
 
     def get_erc20_transfers(self, wallet_address: str) -> List[Dict[str, Any]]:
-        bt.logging.debug(f"get_erc20_transfers: wallet_address {wallet_address}")
-        url = f"https://eth-mainnet.alchemyapi.io/v2/{ALCHEMY_API_KEY}"
+        url = f"https://eth-mainnet.g.alchemy.com/v2/{ALCHEMY_API_KEY}"
+
+        bt.logging.debug(f"get_erc20_transfers: wallet_address {wallet_address} -> {url}")
         
         headers = {
             'Content-Type': 'application/json'
@@ -367,7 +368,7 @@ class PalaidnMiner(BaseNeuron):
                 "fromBlock": "0x0",
                 "toBlock": "latest",
                 "fromAddress": wallet_address,
-                "category": ["erc20"],
+                "category": ["erc721", "erc20", "erc1155"],
                 "withMetadata": True,
                 "excludeZeroValue": True
             }],
