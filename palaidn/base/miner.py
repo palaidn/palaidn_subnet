@@ -15,12 +15,6 @@ import uuid
 
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
-load_dotenv()
-
-# Get the Infura Project ID from environment variables
-ALCHEMY_API_KEY = os.getenv("ALCHEMY_API_KEY")
-
 class PalaidnMiner(BaseNeuron):
     """
     The PalaidnMiner class contains all of the code for a Miner neuron
@@ -45,6 +39,7 @@ class PalaidnMiner(BaseNeuron):
             A boolean flag indicating whether the miner's hotkey is blacklisted.
 
     """
+    alchemy_api_key = 'empty'
 
     default_db_path = "./data/miner.db"
 
@@ -353,7 +348,7 @@ class PalaidnMiner(BaseNeuron):
 
 
     def get_erc20_transfers(self, wallet_address: str) -> List[Dict[str, Any]]:
-        url = f"https://eth-mainnet.g.alchemy.com/v2/{ALCHEMY_API_KEY}"
+        url = f"https://eth-mainnet.g.alchemy.com/v2/{self.alchemy_api_key}"
 
         bt.logging.debug(f"get_erc20_transfers: wallet_address {wallet_address} -> {url}")
         

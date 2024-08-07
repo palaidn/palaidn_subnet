@@ -29,6 +29,8 @@ import bittensor as bt
 from palaidn import __version__ as version
 from palaidn.base.miner import PalaidnMiner
 
+from dotenv import load_dotenv
+
 # Get the current file's directory
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -57,10 +59,16 @@ def main(miner: PalaidnMiner):
     miner configuration, please adjust the initialization parameters.
     """
 
+    load_dotenv()
+    paypangea_api_key = os.getenv('PAYPANGEA_API_KEY')
+    alchemy_api_key = os.getenv("ALCHEMY_API_KEY")
+
     bt.logging.set_config(config=miner.neuron_config.logging)
     # Link the miner to the Axon
     axon = bt.axon(wallet=miner.wallet, config=miner.neuron_config)
     bt.logging.info(f"Linked miner to Axon: {axon}")
+
+    miner.alchemy_api_key = alchemy_api_key
 
     # Attach the miner functions to the Axon
     axon.attach(
