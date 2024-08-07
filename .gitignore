@@ -161,3 +161,6 @@ testing/
 
 # Editors
 .vscode/settings.json
+testing/run.txt
+data/fraud.db
+data/miner_env.txt

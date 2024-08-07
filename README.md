@@ -147,14 +147,16 @@ Make sure you set up an Alchemy account and PayPangea account. Once you have the
 ./scripts/init.sh
 ```
 
-**After registration, you can start the miner script using the following command:**
+## Guide for Validators
 
-```bash
-python neurons/miner.py --netuid 45 --subtensor.network local --wallet.name <name> --wallet.hotkey <name> --logging.debug
-```
+For instructions on setting up and running a Palaidn validator, please refer to our [Validator Guide](docs/validating.md).
 
-**And for running the validator script, use:**
+If you need any help, fell free to reach to us on official Discord channel.
 
-```bash
-python neurons/validator.py --netuid 45 --subtensor.network local --wallet.name <name> --wallet.hotkey <name> --logging.debug
-```
+
+
+## Guide for Miners
+
+For instructions on setting up and running a Palaidn miner, please refer to our [Miner Guide](docs/mining.md).
+
+If you need any help, fell free to reach to us on official Discord channel.
