@@ -90,7 +90,7 @@ class FraudData:
                     )
                     conn.commit()
                 else:
-                    bt.logging.info(f"Transaction {tx.transaction_hash} for miner wallet {tx.minerWallet} already exists in the database.")
+                    bt.logging.info(f"Transaction {tx.transaction_hash} for miner wallet {minerWallet} already exists in the database.")
             except sqlite3.Error as e:
                 bt.logging.error(f"Error inserting transaction {tx.transaction_hash} into database: {e}")
                 conn.rollback()
