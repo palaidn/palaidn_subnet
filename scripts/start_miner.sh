@@ -9,7 +9,7 @@ if [ "$PWD" != "$REPO_ROOT" ]; then
     cd "$REPO_ROOT" || { echo "Failed to change directory. Exiting."; exit 1; }
 fi
 
-DISABLE_AUTO_UPDATE="false"
+ENABLE_AUTO_UPDATE="false"
 
 # Function to prompt for user input
 prompt_for_input() {
@@ -69,10 +69,10 @@ echo "PAYPANGEA_API_KEY=$PAYPANGEA_API_KEY" >> .env
 echo ".env file created successfully with your Alchemy API key and PayPangea API key."
 
 # Prompt for network if not specified
-prompt_for_input "Enter network (local/test/finney)" "finney" "NETWORK"
+prompt_for_input "Enter network (local/finney)" "finney" "NETWORK"
 case $NETWORK in
     finney)
-        DEFAULT_NEURON_ARGS=" --subtensor.network finney --netuid 45"
+        DEFAULT_NEURON_ARGS=" --netuid 45"
         ;;
     local)
         DEFAULT_NEURON_ARGS=" --netuid 1 --subtensor.chain_endpoint ws://127.0.0.1:9946"
@@ -107,12 +107,14 @@ case $LOGGING_LEVEL in
 esac
 
 # Prompt for disabling auto-update if not specified
-if [ "$DISABLE_AUTO_UPDATE" = "false" ]; then
-    prompt_yes_no "Do you want to disable auto-update? Warning: this will apply to all running neurons" "DISABLE_AUTO_UPDATE"
+if [ "$ENABLE_AUTO_UPDATE" = "false" ]; then
+    prompt_yes_no "Do you want to enable auto-update? We strogly recommend you do. Warning: this will apply to all running neurons" "ENABLE_AUTO_UPDATE"
 fi
 
+pm2 save
+
 # Handle auto-updater
-if [ "$DISABLE_AUTO_UPDATE" = "false" ]; then
+if [ "$ENABLE_AUTO_UPDATE" = "true" ]; then
     if ! is_auto_updater_running; then
         pm2 start scripts/auto_update.sh --name "auto-updater"
         echo "Auto-updater started."

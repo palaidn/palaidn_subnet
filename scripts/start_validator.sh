@@ -93,6 +93,7 @@ prompt_for_input "Enter wallet name" "default" "WALLET_NAME"
 prompt_for_input "Enter wallet hotkey" "default" "WALLET_HOTKEY"
 DEFAULT_NEURON_ARGS="$DEFAULT_NEURON_ARGS --wallet.name $WALLET_NAME --wallet.hotkey $WALLET_HOTKEY"
 
+pm2 save
 
 # Prompt for logging level if not specified
 prompt_for_input "Enter logging level (info/debug/trace)" "debug" "LOGGING_LEVEL"
