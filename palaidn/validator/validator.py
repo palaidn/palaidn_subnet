@@ -275,6 +275,10 @@ class PalaidnValidator(BaseNeuron):
 
         transactions_dict = {}
 
+        bt.logging.warning(
+            f"Processing data send from UID {self.uid}."
+        )
+
         for synapse in transactions:
             # ensure synapse has at least 3 elements
             if synapse.wallet_address:
@@ -283,17 +287,22 @@ class PalaidnValidator(BaseNeuron):
 
                 uid = synapse.neuron_uid
 
-                # ensure prediction_dict is not none before adding it to transactions_dict
-                if transaction_data is not None and transaction_data != []:
-
+                if uid == self.uid:
                     bt.logging.warning(
-                        f"miner {uid} fetched transactions and they will be saved: {transaction_data}"
+                        f"{uid} is offline or is not a miner"
                     )
-                    self.fraud_data.insert_into_database(base_address, transaction_data, self.metagraph.hotkeys)
                 else:
-                    bt.logging.warning(
-                        f"miner {uid} did not fetch any trasactions and will be skipped."
-                    )
+                    # ensure prediction_dict is not none before adding it to transactions_dict
+                    if transaction_data is not None and transaction_data != []:
+
+                        bt.logging.warning(
+                            f"miner {uid} fetched transactions and they will be saved: {transaction_data}"
+                        )
+                        self.fraud_data.insert_into_database(base_address, transaction_data, self.metagraph.hotkeys)
+                    else:
+                        bt.logging.warning(
+                            f"UID {uid} responded, but did not fetch any transactions and will be skipped."
+                        )
             else:
                 bt.logging.warning(
                     "synapse data is incomplete or not in the expected format."
@@ -524,7 +533,7 @@ class PalaidnValidator(BaseNeuron):
 
     def calculate_miner_scores(self):
         """
-        Calculates the scores for miners based on their performance in the last 8 days.
+        Calculates the scores for miners based on their performance in the last 36 hours.
         The score is the number of transactions they submitted. All times are in UTC.
         """
         earnings = [1.0] * len(self.metagraph.uids)
@@ -533,7 +542,7 @@ class PalaidnValidator(BaseNeuron):
         cursor = conn.cursor()
 
         now = datetime.now(timezone.utc)
-        timeframe = now - timedelta(days=8)
+        timeframe = now - timedelta(hours=36)
 
         cursor.execute(
             """

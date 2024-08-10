@@ -64,8 +64,12 @@ def main(miner: PalaidnMiner):
     alchemy_api_key = os.getenv("ALCHEMY_API_KEY")
 
     bt.logging.set_config(config=miner.neuron_config.logging)
+    bt.logging.info(f"{miner.neuron_config}")
     # Link the miner to the Axon
-    axon = bt.axon(wallet=miner.wallet, config=miner.neuron_config)
+    axon = bt.axon(
+        wallet=miner.wallet, 
+        config=miner.neuron_config
+    )
     bt.logging.info(f"Linked miner to Axon: {axon}")
 
     miner.alchemy_api_key = alchemy_api_key
@@ -152,6 +156,7 @@ if __name__ == "__main__":
     parser.add_argument('--subtensor.chain_endpoint', type=str, help="The subtensor chain endpoint to connect to")
     parser.add_argument('--wallet.name', type=str, help="The name of the wallet to use")
     parser.add_argument('--wallet.hotkey', type=str, help="The hotkey of the wallet to use")
+    parser.add_argument('--axon.port', type=int, help="The hotkey of the wallet to use")
     parser.add_argument('--logging.debug', action='store_true', help="Enable debug logging")
     parser.add_argument('--logging.info', action='store_true', help="Enable info logging")
     parser.add_argument('--logging.trace', action='store_true', help="Enable trace logging")

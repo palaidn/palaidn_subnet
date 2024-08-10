@@ -56,6 +56,8 @@ class PalaidnMiner(BaseNeuron):
         """
         super().__init__(parser=parser, profile="miner")
 
+        bt.logging.info("axon:", bt.axon)
+
         # Neuron configuration
         self.neuron_config = self.config(
             bt_classes=[bt.subtensor, bt.logging, bt.wallet, bt.axon]
@@ -288,6 +290,8 @@ class PalaidnMiner(BaseNeuron):
 
         transactions_dict = []
         scanID = str(uuid.uuid4())
+
+        synapse.neuron_uid = str(self.miner_uid)
 
         for tx in transactions:
             bt.logging.trace(f" Processing transactions: {tx}")

@@ -7,7 +7,7 @@
 
 # NOTE: Specification for miners may be different from validators
 
-version: '0.2.1' # update this version key as needed, ideally should match your release version
+version: '0.2.2' # update this version key as needed, ideally should match your release version
 
 compute_spec:
 
@@ -35,7 +35,7 @@ compute_spec:
 
     os:
       name: "Ubuntu"  # Name of the preferred operating system(s)
-      version: 20.04  # Version of the preferred operating system(s)
+      version: 22.04  # Version of the preferred operating system(s)
 
   validator:
 

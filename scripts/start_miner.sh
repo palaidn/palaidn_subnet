@@ -75,7 +75,8 @@ case $NETWORK in
         DEFAULT_NEURON_ARGS=" --netuid 45"
         ;;
     local)
-        DEFAULT_NEURON_ARGS=" --netuid 1 --subtensor.chain_endpoint ws://127.0.0.1:9946"
+        prompt_for_input "Enter network UID" "45" "NETWORK_UID"
+        DEFAULT_NEURON_ARGS=" --netuid $NETWORK_UID --subtensor.chain_endpoint ws://127.0.0.1:9946"
         ;;
     *)
         DEFAULT_NEURON_ARGS=" --subtensor.network $NETWORK"
@@ -133,6 +134,10 @@ else
 fi
 
 prompt_for_input "Enter instance name" "subnet45miner" "INSTANCE_NAME"
+
+prompt_for_input "Enter axon" "8091" "AXON"
+
+DEFAULT_NEURON_ARGS="$DEFAULT_NEURON_ARGS --axon.port $AXON"
 
 PROCESS_STATUS=$(pm2 list | grep "$INSTANCE_NAME")
 

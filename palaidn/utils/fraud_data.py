@@ -62,9 +62,21 @@ class FraudData:
                     """SELECT COUNT(*) FROM wallet_transactions WHERE miner_wallet = ? AND transaction_hash = ?""",
                     (minerWallet, tx.transaction_hash)
                 )
-                exists = c.fetchone()[0]
 
-                if not exists:
+                exists = c.fetchone()
+
+                if exists:
+                    # If the transaction exists, update the scan_date
+                    c.execute(
+                        """UPDATE wallet_transactions
+                        SET scan_date = ?
+                        WHERE id = ?""",
+                        (tx.scanDate, exists[0])
+                    )
+                    conn.commit()
+                    bt.logging.info(f"Updated scan_date for transaction {tx.transaction_hash} for miner wallet {minerWallet}.")
+                else:
+                    # If the transaction does not exist, insert it
                     c.execute(
                         """INSERT INTO wallet_transactions (
                             id, wallet_address, base_address, transaction_hash, transaction_date, 
@@ -89,8 +101,7 @@ class FraudData:
                         )
                     )
                     conn.commit()
-                else:
-                    bt.logging.info(f"Transaction {tx.transaction_hash} for miner wallet {minerWallet} already exists in the database.")
+                    bt.logging.info(f"Inserted new transaction {tx.transaction_hash} for miner wallet {minerWallet}.")
             except sqlite3.Error as e:
                 bt.logging.error(f"Error inserting transaction {tx.transaction_hash} into database: {e}")
                 conn.rollback()
@@ -152,23 +163,25 @@ class FraudData:
             "Authorization": f"Bearer {api_key}"
         }
 
-        response = requests.get(url, headers=headers)
+        try:
+            response = requests.get(url, headers=headers)
+            bt.logging.info(f"response: {response}")
 
-        bt.logging.info(f"response: {response}")
-
-        if response.status_code == 200:
-            wallet_data = response.json()
-            wallet_address = wallet_data.get("wallet")
-            is_fraud = wallet_data.get("is_fraud")
-            if is_fraud == 1:
-                bt.logging.info(f"Fraudulent wallet detected: {wallet_address}")
-
-                return wallet_address
+            if response.status_code == 200:
+                wallet_data = response.json()
+                wallet_address = wallet_data.get("wallet")
+                is_fraud = wallet_data.get("is_fraud")
+                
+                if is_fraud == 1:
+                    bt.logging.info(f"Fraudulent wallet detected: {wallet_address}")
+                    return wallet_address
+                else:
+                    bt.logging.info(f"Wallet {wallet_address} is not fraudulent.")
+                    return ''
             else:
-                bt.logging.info(f"Wallet {wallet_address} is not fraudulent.")
-
+                bt.logging.error(f"Failed to fetch wallet data: {response.status_code} - {response.text}")
                 return ''
-        else:
-            bt.logging.error(f"Failed to fetch wallet data: {response.status_code} - {response.text}")
 
+        except requests.exceptions.RequestException as e:
+            bt.logging.error(f"An error occurred during the request: {e}")
             return ''

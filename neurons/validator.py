@@ -18,6 +18,8 @@ from palaidn.protocol import PalaidnData
 from datetime import datetime, timezone, timedelta
 from dotenv import load_dotenv
 
+from palaidn import __version__ as version
+
 async def main(validator: PalaidnValidator):
 
     load_dotenv()
@@ -40,6 +42,13 @@ async def main(validator: PalaidnValidator):
 
             #     fraud_data_wallet = await fraud_data.fetch_wallet_data(paypangea_api_key)
             #     last_api_call = current_time
+            log = (
+                    f"Version:{version} | "
+                    f"Step:{validator.step} | "
+                )
+
+            bt.logging.info(log)
+            bt.logging.info(f"Validator UID: {validator.uid}")
 
             
             fraud_data_wallet = await fraud_data.fetch_wallet_data(paypangea_api_key)

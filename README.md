@@ -104,6 +104,16 @@ Miners are motivated to outperform each other in identifying genuine frauds, ens
 - No active Firewall preventing communication between your Miner and Validators.
 6. Git clone the Palaidn repo, install the needed packages, and start your Miner’s script.
 
+# Installation Guide
+
+To begin using this repository, the first step is to install Bittensor. Bittensor is a prerequisite for running the scripts and tools provided here. 
+
+You can find detailed installation instructions for Bittensor in the official documentation [here](https://docs.bittensor.com/getting-started/installation).
+
+Please make sure to follow the installation steps carefully to ensure that Bittensor is properly set up on your system before proceeding with any other operations.
+
+If you encounter any issues during the installation process, refer to the troubleshooting section in the Bittensor documentation or reach out to our support team for assistance.
+
 # Creating a Wallet
 
 Before proceeding, you'll need to create a wallet. A wallet is required for managing your digital assets and interacting with the functionalities provided by this repository.
@@ -119,16 +129,6 @@ To fully utilize the functionalities provided by this repository, it is necessar
 btcli subnet register --netuid 45 --wallet.name <name> --wallet.hotkey <name>
 ```
 
-# Installation Guide
-
-To begin using this repository, the first step is to install Bittensor. Bittensor is a prerequisite for running the scripts and tools provided here. 
-
-You can find detailed installation instructions for Bittensor in the official documentation [here](https://docs.bittensor.com/getting-started/installation).
-
-Please make sure to follow the installation steps carefully to ensure that Bittensor is properly set up on your system before proceeding with any other operations.
-
-If you encounter any issues during the installation process, refer to the troubleshooting section in the Bittensor documentation or reach out to our support team for assistance.
-
 **Prerequisites:**
 - Ensure that you have Python 3.12 or a later version installed on your system.
 - Run your local Subtensor, instructions on how to install Subtensor locally can be found here: [Subtensor Installation Guide](https://github.com/opentensor/subtensor/blob/main/docs/running-subtensor-locally.md)
@@ -141,10 +141,25 @@ python3 setup.py install_lib
 python3 setup.py build
 ```
 
-Make sure you set up an Alchemy account and PayPangea account. Once you have them set up, run the follwing command from palaidn_subnet directory
+For auto-update funstion we require nodejs and npm installed, so in case you do not have it installed yet, install it with:
+```bash
+sudo apt install nodejs npm -y
+```
+
+Please install pm2 with the following command
 
 ```bash
-./scripts/init.sh
+sudo npm install -g pm2
+```
+
+To verify that PM2 has been installed successfully, you can check its version:
+```bash
+pm2 --version
+```
+
+To ensure that your processes managed by PM2 start automatically when the system boots, you can set up PM2 as a service:
+```bash
+pm2 startup
 ```
 
 ## Guide for Validators
