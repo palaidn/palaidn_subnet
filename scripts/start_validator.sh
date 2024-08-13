@@ -75,7 +75,12 @@ case $NETWORK in
         DEFAULT_NEURON_ARGS=" --subtensor.network finney --netuid 45"
         ;;
     local)
-        DEFAULT_NEURON_ARGS=" --netuid 1 --subtensor.chain_endpoint ws://127.0.0.1:9946"
+        prompt_for_input "Enter network UID" "45" "NETWORK_UID"
+        prompt_for_input "Enter chain endpoint" "ws://127.0.0.1:9946" "CHAIN_ENDPOINT"
+        DEFAULT_NEURON_ARGS=" --netuid $NETWORK_UID --subtensor.chain_endpoint $CHAIN_ENDPOINT"
+        ;;
+    test)
+        DEFAULT_NEURON_ARGS=" --netuid 203 --subtensor.network test"
         ;;
     *)
         DEFAULT_NEURON_ARGS=" --subtensor.network $NETWORK"
