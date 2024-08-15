@@ -164,3 +164,5 @@ testing/
 testing/run.txt
 data/fraud.db
 data/miner_env.txt
+
+start_var

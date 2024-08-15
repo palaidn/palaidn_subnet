@@ -27,21 +27,11 @@ update_and_restart() {
         # Install the package in editable mode
         if python3 -m pip install -e .; then
 
-            # Run the additional setup commands
-            echo "Running setup commands..."
-            if python3 setup.py install_lib && python3 setup.py build; then
-                echo "Setup commands completed successfully."
-
-                # Schedule PM2 restart
-                echo "Scheduling PM2 restart..."
-                nohup bash -c "sleep 10 && $(pwd)/scripts/restart_pm2_processes.sh" > /tmp/pm2_restart.log 2>&1 &
-                echo "PM2 restart scheduled. The script will exit now and restart shortly."
-                exit 0
-            else
-                echo "Failed to run setup commands."
-                git stash pop
-                return 1
-            fi
+            # Schedule PM2 restart
+            echo "Scheduling PM2 restart..."
+            nohup bash -c "sleep 10 && $(pwd)/scripts/restart_pm2_processes.sh" > /tmp/pm2_restart.log 2>&1 &
+            echo "PM2 restart scheduled. The script will exit now and restart shortly."
+            exit 0
         else
             echo "Failed to install dependencies. Skipping restart."
             git stash pop
