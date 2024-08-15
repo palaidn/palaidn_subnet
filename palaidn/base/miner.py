@@ -280,7 +280,6 @@ class PalaidnMiner(BaseNeuron):
             )
 
         bt.logging.info(f"Miner: synapse {synapse}")
-        bt.logging.info(f"Miner: synapse {synapse}")
 
         transactions = self.trace_transactions(synapse.wallet_address)
 

@@ -108,7 +108,7 @@ def main(miner: PalaidnMiner):
                 # Check if the miners hotkey is on the remote blacklist
                 # miner.check_remote_blacklist()
 
-                if miner.step % 600 == 0:
+                if miner.step % 60 == 0:
                     bt.logging.debug(
                         f"Syncing metagraph: {miner.metagraph} with subtensor: {miner.subtensor}"
                     )
@@ -117,7 +117,7 @@ def main(miner: PalaidnMiner):
 
                 miner.metagraph = miner.subtensor.metagraph(miner.neuron_config.netuid)
                 log = (
-                    f"Version***:{version} | "
+                    f"Version**:{version} | "
                     f"Blacklist:{miner.hotkey_blacklisted} | "
                     f"Step:{miner.step} | "
                     f"Block:{miner.metagraph.block.item()} | "
@@ -131,6 +131,7 @@ def main(miner: PalaidnMiner):
 
                 bt.logging.info(log)
                 bt.logging.info(f"Miner UID: {miner.miner_uid}")
+                bt.logging.info(f"Miner metagraph: {miner.metagraph}")
 
                 #bt.logging.warning(f"TESTING AUTO UPDATE!!")
 
