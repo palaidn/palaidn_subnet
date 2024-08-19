@@ -117,7 +117,7 @@ def main(miner: PalaidnMiner):
 
                 miner.metagraph = miner.subtensor.metagraph(miner.neuron_config.netuid)
                 log = (
-                    f"Version**:{version} | "
+                    f"Version:{version} | "
                     f"Blacklist:{miner.hotkey_blacklisted} | "
                     f"Step:{miner.step} | "
                     f"Block:{miner.metagraph.block.item()} | "
@@ -180,7 +180,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--validator_min_stake",
         type=float,
-        default=1.0,
+        default=1000.0,
         help="Determine the minimum stake the validator should have to accept requests",
     )
 
