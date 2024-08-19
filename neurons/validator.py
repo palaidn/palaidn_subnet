@@ -93,7 +93,8 @@ async def main(validator: PalaidnValidator):
                 bt.logging.warning(f"UIDs to query is empty: {uids_to_query}")
 
             # Broadcast query to valid Axons
-            current_time = datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
+            # current_time = datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
+            current_time = datetime.now(timezone.utc).isoformat()
             # metadata = Metadata.create(validator.wallet, validator.subnet_version, validator.uid)
 
             synapse = PalaidnData.create(
@@ -225,7 +226,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--max_targets",
         type=int,
-        default=128,
+        default=256,
         help="Sets the value for the number of targets to query at once",
     )
     parser.add_argument(

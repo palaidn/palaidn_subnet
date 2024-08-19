@@ -427,7 +427,7 @@ class PalaidnValidator(BaseNeuron):
 
         # get uids with a positive stake
         uids_with_stake = self.metagraph.total_stake >= 0.0
-        bt.logging.trace(f"uids with a positive stake: {uids_with_stake}")
+        bt.logging.trace(f"uids with a positive stake: {uids_with_stake}: {len(uids_with_stake)}")
 
         # get uids with an ip address of 0.0.0.0
         invalid_uids = torch.tensor(
@@ -524,7 +524,7 @@ class PalaidnValidator(BaseNeuron):
 
         list_of_hotkeys = [axon.hotkey for axon in uids_to_query]
 
-        bt.logging.trace(f"sending query to the following hotkeys: {list_of_hotkeys}")
+        bt.logging.debug(f"sending query to the following hotkeys: {list_of_hotkeys}: {len(list_of_hotkeys)}")
 
         return uids_to_query, list_of_uids, blacklisted_uids, uids_not_to_query
 
@@ -586,8 +586,6 @@ class PalaidnValidator(BaseNeuron):
             weights = [e / total_earnings for e in earnings]
         else:
             weights = earnings  # If total is 0, keep the original earnings
-
-        bt.logging.info(f"Normalized weights: {weights}")
 
         # Check stake
         uid = self.metagraph.hotkeys.index(self.wallet.hotkey.ss58_address)
