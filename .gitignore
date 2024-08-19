@@ -164,3 +164,6 @@ testing/
 testing/run.txt
 data/fraud.db
 data/miner_env.txt
+
+.start_var_miner
+.start_var_validator

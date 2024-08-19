@@ -67,7 +67,7 @@ setup(
     description="palaidn_subnet", 
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/opentensor/palaidn-subnet",
+    url="https://github.com/opentensor/palaidn_subnet",
     author="palaidn.com",
     packages=find_packages(),
     include_package_data=True,
