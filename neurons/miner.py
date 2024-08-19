@@ -131,6 +131,7 @@ def main(miner: PalaidnMiner):
 
                 bt.logging.info(log)
                 bt.logging.info(f"Miner UID: {miner.miner_uid}")
+                bt.logging.info(f"Miner metagraph: {miner.metagraph}")
 
                 #bt.logging.warning(f"TESTING AUTO UPDATE!!")
 
@@ -179,7 +180,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--validator_min_stake",
         type=float,
-        default=1.0,
+        default=1000.0,
         help="Determine the minimum stake the validator should have to accept requests",
     )
 
