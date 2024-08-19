@@ -108,7 +108,7 @@ def main(miner: PalaidnMiner):
                 # Check if the miners hotkey is on the remote blacklist
                 # miner.check_remote_blacklist()
 
-                if miner.step % 60 == 0:
+                if miner.step % 600 == 0:
                     bt.logging.debug(
                         f"Syncing metagraph: {miner.metagraph} with subtensor: {miner.subtensor}"
                     )

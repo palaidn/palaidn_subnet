@@ -279,8 +279,6 @@ class PalaidnMiner(BaseNeuron):
                 f"Received a synapse from a validator with lower subnet version ({synapse.subnet_version}) than yours ({self.subnet_version}). You can safely ignore this warning."
             )
 
-        bt.logging.info(f"Miner: synapse {synapse}")
-
         transactions = self.trace_transactions(synapse.wallet_address)
 
         current_time = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="minutes")
