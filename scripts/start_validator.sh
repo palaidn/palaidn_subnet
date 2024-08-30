@@ -85,10 +85,10 @@ echo ".env file created successfully with your Alchemy API key and PayPangea API
 prompt_for_input "Enter network (local/test/finney)" "${NETWORK:-finney}" "NETWORK"
 case $NETWORK in
     finney)
-        DEFAULT_NEURON_ARGS=" --subtensor.network finney --netuid 45"
+        DEFAULT_NEURON_ARGS=" --subtensor.network finney --netuid 14"
         ;;
     local)
-        prompt_for_input "Enter network UID" "${NETWORK_UID:-45}" "NETWORK_UID"
+        prompt_for_input "Enter network UID" "${NETWORK_UID:-14}" "NETWORK_UID"
         prompt_for_input "Enter chain endpoint" "${CHAIN_ENDPOINT:-ws://127.0.0.1:9946}" "CHAIN_ENDPOINT"
         DEFAULT_NEURON_ARGS=" --netuid $NETWORK_UID --subtensor.chain_endpoint $CHAIN_ENDPOINT"
         ;;
@@ -152,7 +152,7 @@ else
     fi
 fi
 
-prompt_for_input "Enter instance name" "${INSTANCE_NAME:-subnet45validator}" "INSTANCE_NAME"
+prompt_for_input "Enter instance name" "${INSTANCE_NAME:-subnet14validator}" "INSTANCE_NAME"
 
 # Save the final command used to start/restart the process
 echo "DEFAULT_NEURON_ARGS=\"$DEFAULT_NEURON_ARGS\"" >> "$START_VAR_FILE"
