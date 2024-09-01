@@ -32,9 +32,9 @@ class ScanWalletTransactions(BaseModel):
 
     scanID: str = Field(..., description="UUID of the scan")
     minerID: str = Field(
-        ..., description="UUID of the miner (coldkey/hotkey) that made the prediction"
+        ..., description="UUID of the miner (coldkey/hotkey)"
     )
-    scanDate: str = Field(..., description="Prediction date of the prediction")
+    scanDate: str = Field(..., description="Scan date ")
     sender: str = Field(..., description="Originating wallet")
     receiver: str = Field(..., description="Receiving wallet")
     transaction_hash: str = Field(..., description="transaction hash")
