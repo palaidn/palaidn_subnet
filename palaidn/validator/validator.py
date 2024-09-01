@@ -533,7 +533,7 @@ class PalaidnValidator(BaseNeuron):
 
     def calculate_miner_scores(self):
         """
-        Calculates the scores for miners based on their performance in the last 36 hours.
+        Calculates the scores for miners based on their performance in the last 12 hours.
         The score is the number of transactions they submitted. All times are in UTC.
         """
         earnings = [1.0] * len(self.metagraph.uids)
@@ -542,7 +542,7 @@ class PalaidnValidator(BaseNeuron):
         cursor = conn.cursor()
 
         now = datetime.now(timezone.utc)
-        timeframe = now - timedelta(hours=36)
+        timeframe = now - timedelta(hours=12)
 
         cursor.execute(
             """
