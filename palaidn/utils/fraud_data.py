@@ -57,6 +57,8 @@ class FraudData:
 
                 minerWallet = hotkeys[int(tx.minerID)]
 
+                now = datetime.now(timezone.utc).isoformat()
+
                 # Check if the transaction is already in the database
                 c.execute(
                     """SELECT COUNT(*) FROM wallet_transactions WHERE miner_wallet = ? AND transaction_hash = ?""",
@@ -65,16 +67,18 @@ class FraudData:
 
                 exists = c.fetchone()
 
-                if exists:
+                # bt.logging.info(f"exists {exists}.")
+
+                if exists and exists[0] > 0:
                     # If the transaction exists, update the scan_date
                     c.execute(
                         """UPDATE wallet_transactions
                         SET scan_date = ?
-                        WHERE id = ?""",
-                        (tx.scanDate, exists[0])
+                        WHERE miner_wallet = ? AND transaction_hash = ?""",
+                        (now, minerWallet, tx.transaction_hash)
                     )
                     conn.commit()
-                    bt.logging.info(f"Updated scan_date for transaction {tx.transaction_hash} for miner wallet {minerWallet}.")
+                    # bt.logging.info(f"Updated scan_date for transaction {tx.transaction_hash} for miner wallet {minerWallet} - {tx.scanDate}.")
                 else:
                     # If the transaction does not exist, insert it
                     c.execute(
@@ -95,13 +99,13 @@ class FraudData:
                             tx.scanID,
                             tx.minerID,
                             minerWallet,
-                            tx.scanDate,
+                            now,
                             tx.sender,
                             tx.receiver
                         )
                     )
                     conn.commit()
-                    bt.logging.info(f"Inserted new transaction {tx.transaction_hash} for miner wallet {minerWallet}.")
+                    # bt.logging.info(f"Inserted new transaction {tx.transaction_hash} for miner wallet {minerWallet}.")
             except sqlite3.Error as e:
                 bt.logging.error(f"Error inserting transaction {tx.transaction_hash} into database: {e}")
                 conn.rollback()

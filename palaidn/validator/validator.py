@@ -288,19 +288,20 @@ class PalaidnValidator(BaseNeuron):
                 uid = synapse.neuron_uid
 
                 if uid == self.uid:
-                    bt.logging.warning(
+                    bt.logging.debug(
                         f"{uid} is offline or is not a miner"
                     )
                 else:
                     # ensure prediction_dict is not none before adding it to transactions_dict
                     if transaction_data is not None and transaction_data != []:
 
-                        bt.logging.warning(
-                            f"miner {uid} fetched transactions and they will be saved: {transaction_data}"
+                        bt.logging.debug(
+                            f"miner {uid} fetched transactions and they will be saved: {len(transaction_data)}"
                         )
+
                         self.fraud_data.insert_into_database(base_address, transaction_data, self.metagraph.hotkeys)
                     else:
-                        bt.logging.warning(
+                        bt.logging.debug(
                             f"UID {uid} responded, but did not fetch any transactions and will be skipped."
                         )
             else:
@@ -533,7 +534,7 @@ class PalaidnValidator(BaseNeuron):
 
     def calculate_miner_scores(self):
         """
-        Calculates the scores for miners based on their performance in the last 36 hours.
+        Calculates the scores for miners based on their performance in the last 12 hours.
         The score is the number of transactions they submitted. All times are in UTC.
         """
         earnings = [1.0] * len(self.metagraph.uids)
@@ -542,7 +543,7 @@ class PalaidnValidator(BaseNeuron):
         cursor = conn.cursor()
 
         now = datetime.now(timezone.utc)
-        timeframe = now - timedelta(hours=36)
+        timeframe = now - timedelta(hours=12)
 
         cursor.execute(
             """
@@ -570,14 +571,13 @@ class PalaidnValidator(BaseNeuron):
 
         bt.logging.debug("Miner performance calculated")
 
-        bt.logging.debug(f"earnings {earnings}")
+        bt.logging.debug(f"scans {earnings}")
         return earnings
  
     async def set_weights(self):
         bt.logging.info("Entering set_weights method")
         # Calculate miner scores and normalize weights as before
         earnings = self.calculate_miner_scores()
-        bt.logging.debug(f"earnings: {earnings}")
         
         total_earnings = sum(earnings)
 
@@ -587,6 +587,7 @@ class PalaidnValidator(BaseNeuron):
         else:
             weights = earnings  # If total is 0, keep the original earnings
 
+        bt.logging.debug(f"earnings: {weights}")
         # Check stake
         uid = self.metagraph.hotkeys.index(self.wallet.hotkey.ss58_address)
         stake = float(self.metagraph.S[uid])
