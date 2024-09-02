@@ -3,6 +3,18 @@
 # Source the user's profile to ensure all necessary environment variables are set
 source ~/.profile
 
+# Check if jq is installed; if not, install it
+if ! command -v jq &> /dev/null; then
+    echo "jq is not installed. Installing jq..."
+    sudo apt-get update && sudo apt-get install -y jq
+    if [ $? -ne 0 ]; then
+        echo "Failed to install jq. Exiting."
+        exit 1
+    fi
+else
+    echo "jq is already installed."
+fi
+
 # Use the full path to PM2
 PM2_PATH=$(which pm2)
 
