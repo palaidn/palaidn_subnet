@@ -37,8 +37,13 @@ else
 
         # Print the instance name, script path, and args for debugging
         echo "Checking $INSTANCE_NAME: $SCRIPT_PATH $ARGS"
+        
+        # Check if NETUID is 45 and change it to 14
+        if [ "$NETUID" = "45" ]; then
+            NETUID="14"
+        fi
 
-        # Process only if netuid is 14 or 203
+        # Process only if netuid is 14 or 203, or is someone is still running old 45 netuid
         if [ "$NETUID" = "14" ] || [ "$NETUID" = "203" ]; then
             # Initialize variables
             NEURON_TYPE=""
