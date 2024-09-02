@@ -19,7 +19,7 @@ In addition to transaction monitoring, Palaidn leverages AI to scan for vulnerab
 :link:**Useful Links:** <br>
 
 - [webpage](https://www.palaidn.com) <br>
-- [GitHub](https://github.com/palaidn/palaidn-subnet)
+- [GitHub](https://github.com/palaidn/palaidn_subnet)
 
 # The Palaidn.com Ecosystem
 
