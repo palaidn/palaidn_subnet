@@ -351,7 +351,7 @@ class PalaidnMiner(BaseNeuron):
     def get_erc20_transfers(self, wallet_address: str) -> List[Dict[str, Any]]:
         url = f"https://eth-mainnet.g.alchemy.com/v2/{self.alchemy_api_key}"
 
-        bt.logging.debug(f"get_erc20_transfers: wallet_address {wallet_address}")
+        # bt.logging.debug(f"get_erc20_transfers: wallet_address {wallet_address}")
         
         headers = {
             'Content-Type': 'application/json'
