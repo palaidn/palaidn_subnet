@@ -18,7 +18,6 @@ update_and_restart() {
 
     echo "New updates detected. Stashing local changes..."
  
-    git add .
     git stash
     echo "Pulling changes..."
     if git pull origin $current_branch; then
