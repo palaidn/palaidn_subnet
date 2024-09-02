@@ -17,6 +17,10 @@ if [ -f "$START_VAR_FILE" ]; then
     source "$START_VAR_FILE"
 fi
 
+
+# Clear the output file first
+: > "$START_VAR_FILE"
+
 DISABLE_AUTO_UPDATE="${DISABLE_AUTO_UPDATE:-false}"
 
 echo "NEURON_TYPE=VALIDATOR" >> "$START_VAR_FILE"
@@ -68,7 +72,7 @@ is_auto_updater_running() {
     pm2 list | grep -q "auto-updater"
 }
 
-echo "You need an Alchemy account to run this miner. Please create one and add the ID below:"
+echo "You need an Alchemy account to run this validator. Please create one and add the ID below:"
 prompt_for_input "Enter your Alchemy API key: " "${ALCHEMY_API_KEY:-}" "ALCHEMY_API_KEY"
 
 echo "You need a PayPangea API key to fetch wallet data. Please enter it below:"
@@ -173,7 +177,7 @@ else
         echo "Restarting $INSTANCE_NAME with arguments: $DEFAULT_NEURON_ARGS"
         pm2 delete "$INSTANCE_NAME"
         sleep 1
-        pm2 start neurons/miner.py --interpreter=python3 --name "$INSTANCE_NAME" -- $DEFAULT_NEURON_ARGS
+        pm2 start neurons/validator.py --interpreter=python3 --name "$INSTANCE_NAME" -- $DEFAULT_NEURON_ARGS
         echo "Validator restarted successfully with instance name: $INSTANCE_NAME"
     else
         # If the process is not running (but found), start it
