@@ -68,6 +68,9 @@ else
 
             # Write to the appropriate output file
             if [ -n "$OUTPUT_FILE" ]; then
+                # Clear the output file first
+                : > "$OUTPUT_FILE"
+                
                 {
                     [ -n "$NEURON_TYPE" ] && echo "NEURON_TYPE=$NEURON_TYPE"
                     [ -n "$NETWORK_UID" ] && echo "NETWORK_UID=$NETWORK_UID"
@@ -79,7 +82,7 @@ else
                     [ -n "$AXON" ] && echo "AXON=$AXON"
                     [ -n "$DEFAULT_NEURON_ARGS" ] && echo "DEFAULT_NEURON_ARGS=\"$DEFAULT_NEURON_ARGS\""
                     [ -n "$INSTANCE_NAME" ] && echo "INSTANCE_NAME=$INSTANCE_NAME"
-                } > "$OUTPUT_FILE"
+                } >> "$OUTPUT_FILE"  # Note: '>>' is used to append if necessary
                 echo "Variables written to $OUTPUT_FILE"
             fi
         fi
