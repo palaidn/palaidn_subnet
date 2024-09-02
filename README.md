@@ -92,9 +92,9 @@ Miners are motivated to outperform each other in identifying genuine frauds, ens
 - Free and paid tiers, pay usage with TAO
 - Double revenue source for our miner and validators
 
-# How to Mine TAO on Subnet 45
+# How to Mine TAO on Subnet 14
 1. Create a Bittensor wallet (coldkey & hotkey).
-2. Register your hotkey to Subnet 45.
+2. Register your hotkey to Subnet 14.
 3. Create a PayPangea account [PayPangea.com](https://paypangea.com) and get API key. Paypangea is a free decentralised wallet that we use for web3 authentication. You will find your API key under Profile settings on the top right corner.
 3. Create a Alchemy account [Alchmemy.com](https://www.alchemy.com/) and get API key.
 5. Hardware requirements:
@@ -124,9 +124,9 @@ Please ensure that you follow the steps outlined in the documentation carefully 
 
 # Registration in Subnetwork
 
-To fully utilize the functionalities provided by this repository, it is necessary to register within the Palaidn.com Subnetwork (UID 45). 
+To fully utilize the functionalities provided by this repository, it is necessary to register within the Palaidn.com Subnetwork (UID 14). 
 ```bash
-btcli subnet register --netuid 45 --wallet.name <name> --wallet.hotkey <name>
+btcli subnet register --netuid 14 --wallet.name <name> --wallet.hotkey <name>
 ```
 
 **Prerequisites:**
