@@ -62,12 +62,12 @@ with codecs.open(
     version_string = version_match.group(1)
 
 setup(
-    name="palaidn_subnet", 
+    name="palaidn", 
     version=version_string,
-    description="palaidn_subnet", 
+    description="palaidn", 
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/opentensor/palaidn_subnet",
+    url="https://github.com/palaidn/palaidn_subnet",
     author="palaidn.com",
     packages=find_packages(),
     include_package_data=True,
