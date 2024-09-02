@@ -18,6 +18,7 @@ update_and_restart() {
 
     echo "New updates detected. Stashing local changes..."
  
+    git add .
     git stash
     echo "Pulling changes..."
     if git pull origin $current_branch; then
@@ -47,7 +48,7 @@ update_and_restart() {
 # Main loop to check for updates
 while true; do
     echo "Fetching updates..."
-    git pull
+    git fetch
     local_hash=$(git rev-parse HEAD)
     remote_hash=$(git rev-parse origin/$current_branch)
 
