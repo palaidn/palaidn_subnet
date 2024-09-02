@@ -39,7 +39,7 @@ else
         echo "Checking $INSTANCE_NAME: $SCRIPT_PATH $ARGS"
 
         # Process only if netuid is 14
-        if [ "$NETUID" = "1" ]; then
+        if [ "$NETUID" = "14" ]; then
             # Initialize variables
             NEURON_TYPE=""
             OUTPUT_FILE=""
