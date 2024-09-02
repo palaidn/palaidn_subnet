@@ -95,13 +95,6 @@ process_pm2() {
 # Check if either .start_var_miner or .start_var_validator exists
 if [ -f "$START_VAR_MINER" ] || [ -f "$START_VAR_VALIDATOR" ]; then
     echo "One of the start_var files exists."
-    if [ -f "$START_VAR_MINER" ]; then
-        echo "Loading variables from $START_VAR_MINER..."
-        source "$START_VAR_MINER"
-    elif [ -f "$START_VAR_VALIDATOR" ]; then
-        echo "Loading variables from $START_VAR_VALIDATOR..."
-        source "$START_VAR_VALIDATOR"
-    fi
 else
     echo "No start_var file found. Proceeding to check PM2 processes..."
     process_pm2
@@ -111,6 +104,14 @@ fi
 if [ -z "$INSTANCE_NAME" ] || [ -z "$DEFAULT_NEURON_ARGS" ] || [ -z "$NEURON_TYPE" ]; then
     echo "INSTANCE_NAME, DEFAULT_NEURON_ARGS, or NEURON_TYPE not found in start_var. Proceeding to check PM2 processes..."
     process_pm2
+fi
+
+if [ -f "$START_VAR_MINER" ]; then
+    echo "Loading variables from $START_VAR_MINER..."
+    source "$START_VAR_MINER"
+elif [ -f "$START_VAR_VALIDATOR" ]; then
+    echo "Loading variables from $START_VAR_VALIDATOR..."
+    source "$START_VAR_VALIDATOR"
 fi
 
 # Determine which script to start based on NEURON_TYPE
