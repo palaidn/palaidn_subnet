@@ -18,6 +18,17 @@ fi
 # Use the full path to PM2
 PM2_PATH=$(which pm2)
 
+# Restart the auto_updater process if it is running
+AUTO_UPDATER_PROCESS=$($PM2_PATH list | grep "auto-updater")
+
+if [ -n "$AUTO_UPDATER_PROCESS" ]; then
+    echo "auto_updater process found. Restarting it..."
+    $PM2_PATH restart "auto-updater"
+    echo "auto_updater process restarted."
+else
+    echo "No auto_updater process found."
+fi
+
 # Define paths to the potential start_var files
 START_VAR_MINER="$(dirname "$0")/../.start_var_miner"
 START_VAR_VALIDATOR="$(dirname "$0")/../.start_var_validator"
