@@ -2,15 +2,6 @@
 
 echo "Starting auto_update.sh"
 
-# Check and set working directory
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-REPO_ROOT="$( dirname "$SCRIPT_DIR" )"
-
-if [ "$PWD" != "$REPO_ROOT" ]; then
-    echo "Changing working directory to $REPO_ROOT"
-    cd "$REPO_ROOT" || { echo "Failed to change directory. Exiting."; exit 1; }
-fi
-
 # Get the current Git branch
 current_branch=$(git rev-parse --abbrev-ref HEAD)
 echo "Auto-update enabled on branch: $current_branch"
