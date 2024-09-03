@@ -2,19 +2,25 @@
 
 echo "Starting auto_update.sh"
 
+# Check and set working directory
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+REPO_ROOT="$( dirname "$SCRIPT_DIR" )"
+
+if [ "$PWD" != "$REPO_ROOT" ]; then
+    echo "Changing working directory to $REPO_ROOT"
+    cd "$REPO_ROOT" || { echo "Failed to change directory. Exiting."; exit 1; }
+fi
+
 # Get the current Git branch
 current_branch=$(git rev-parse --abbrev-ref HEAD)
 echo "Auto-update enabled on branch: $current_branch"
 
-# Make sure the restart script is executable
+# Make sure the restart and cleanup scripts are executable
 chmod +x scripts/restart_pm2_processes.sh
+chmod +x scripts/cleanup_script.sh
 
 # Function to handle update and restart
 update_and_restart() {
-    # Ensure we are in the correct directory
-    script_dir=$(dirname "$0")
-    project_dir=$(cd "$script_dir/.." && pwd)
-    cd "$project_dir"
 
     echo "New updates detected. Stashing local changes..."
  
@@ -23,7 +29,7 @@ update_and_restart() {
     if git pull origin $current_branch; then
         echo "Running cleanup script..."
         # Run the cleanup script
-        if bash "$project_dir/cleanup_script.sh"; then
+        if bash "$(pwd)/scripts/cleanup_script.sh"; then
             echo "Cleanup completed successfully."
             echo "Reinstalling dependencies..."
 
@@ -40,39 +46,3 @@ update_and_restart() {
                 git stash pop
                 return 1
             fi
-        else
-            echo "Cleanup script failed. Skipping update and restart."
-            git stash pop
-            return 1
-        fi
-    else
-        echo "Failed to pull changes. Skipping update and restart."
-        git stash pop
-        return 1
-    fi
-}
-
-
-# Main loop to check for updates
-while true; do
-    echo "Fetching updates..."
-    git fetch
-    local_hash=$(git rev-parse HEAD)
-    remote_hash=$(git rev-parse origin/$current_branch)
-
-    echo "Local hash: $local_hash"
-    echo "Remote hash: $remote_hash"
-
-    if [[ $local_hash != $remote_hash ]]; then
-        if update_and_restart; then
-            echo "Update successful."
-            sleep 120
-        else
-            echo "Update failed. Retrying in 5 minutes."
-            sleep 300
-        fi
-    else
-        echo "No updates found. Checking again in 2 minutes..."
-        sleep 120
-    fi
-done
