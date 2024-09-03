@@ -48,3 +48,34 @@ update_and_restart() {
                 git stash pop
                 return 1
             fi
+        fi
+    else
+        echo "Failed to pull changes. Skipping update and restart."
+        git stash pop
+        return 1
+    fi
+}
+
+# Main loop to check for updates
+while true; do
+    echo "Fetching updates..."
+    git fetch
+    local_hash=$(git rev-parse HEAD)
+    remote_hash=$(git rev-parse origin/$current_branch)
+
+    echo "Local hash: $local_hash"
+    echo "Remote hash: $remote_hash"
+
+    if [[ $local_hash != $remote_hash ]]; then
+        if update_and_restart; then
+            echo "Update successful."
+            sleep 120
+        else
+            echo "Update failed. Retrying in 5 minutes."
+            sleep 300
+        fi
+    else
+        echo "No updates found. Checking again in 2 minutes..."
+        sleep 120
+    fi
+done
