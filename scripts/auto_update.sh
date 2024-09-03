@@ -29,7 +29,6 @@ update_and_restart() {
     if git pull origin $current_branch; then
         echo "Running cleanup script..."
         echo "$(pwd)"
-        echo "$(pwd)/scripts/cleanup_script.sh"
         # Run the cleanup script
         if bash "$(pwd)/scripts/cleanup_script.sh"; then
             echo "Cleanup completed successfully."
