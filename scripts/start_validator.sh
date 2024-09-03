@@ -21,7 +21,7 @@ fi
 # Clear the output file first
 : > "$START_VAR_FILE"
 
-DISABLE_AUTO_UPDATE="${DISABLE_AUTO_UPDATE:-false}"
+DISABLE_AUTO_UPDATE="false"
 
 echo "NEURON_TYPE=VALIDATOR" >> "$START_VAR_FILE"
 
@@ -130,31 +130,31 @@ case $LOGGING_LEVEL in
 esac
 
 # Prompt for disabling auto-update if not specified
-if [ "$DISABLE_AUTO_UPDATE" = "false" ]; then
-    prompt_yes_no "Do you want to disable auto-update? Warning: this will apply to all running neurons" "DISABLE_AUTO_UPDATE"
-fi
+# if [ "$DISABLE_AUTO_UPDATE" = "false" ]; then
+#     prompt_yes_no "Do you want to disable auto-update? Warning: this will apply to all running neurons" "DISABLE_AUTO_UPDATE"
+# fi
 
 # Save the auto-update status to start_var
 echo "DISABLE_AUTO_UPDATE=\"$DISABLE_AUTO_UPDATE\"" >> "$START_VAR_FILE"
 
 # Handle auto-updater
-if [ "$DISABLE_AUTO_UPDATE" = "false" ]; then
-    if ! is_auto_updater_running; then
-        pm2 start scripts/auto_update.sh --name "auto-updater"
-        echo "Auto-updater started."
-    else
-        pm2 restart scripts/auto_update.sh --name "auto-updater"
-        echo "Auto-updater is already running."
-    fi
+# if [ "$DISABLE_AUTO_UPDATE" = "false" ]; then
+if ! is_auto_updater_running; then
+    pm2 start scripts/auto_update.sh --name "auto-updater"
+    echo "Auto-updater started."
 else
-    if is_auto_updater_running; then
-        pm2 stop auto-updater
-        pm2 delete auto-updater
-        echo "Auto-updater has been stopped and removed."
-    else
-        echo "Auto-updater is not running."
-    fi
+    pm2 restart scripts/auto_update.sh --name "auto-updater"
+    echo "Auto-updater is already running."
 fi
+# else
+#     if is_auto_updater_running; then
+#         pm2 stop auto-updater
+#         pm2 delete auto-updater
+#         echo "Auto-updater has been stopped and removed."
+#     else
+#         echo "Auto-updater is not running."
+#     fi
+# fi
 
 prompt_for_input "Enter instance name" "${INSTANCE_NAME:-subnet14validator}" "INSTANCE_NAME"
 

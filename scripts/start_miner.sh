@@ -23,6 +23,8 @@ ENABLE_AUTO_UPDATE="${ENABLE_AUTO_UPDATE:-false}"
 # Clear the output file first
 : > "$START_VAR_FILE"
 
+echo "NEURON_TYPE=MINER" >> "$START_VAR_FILE"
+
 # Function to prompt for user input
 prompt_for_input() {
     local prompt="$1"
