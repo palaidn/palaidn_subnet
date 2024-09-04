@@ -90,7 +90,7 @@ case $NETWORK in
         DEFAULT_NEURON_ARGS=" --netuid 14"
         ;;
     test)
-        DEFAULT_NEURON_ARGS=" --netuid 203 --subtensor.network test"
+        DEFAULT_NEURON_ARGS=" --netuid 203 --subtensor.network test --validator_min_stake 10"
         ;;
     local)
         prompt_for_input "Enter network UID" "${NETWORK_UID:-14}" "NETWORK_UID"
