@@ -43,7 +43,7 @@ async def main(validator: PalaidnValidator):
             #     fraud_data_wallet = await fraud_data.fetch_wallet_data(paypangea_api_key)
             #     last_api_call = current_time
             log = (
-                    f"Version:{version} * | "
+                    f"Version:{version} ** | "
                     f"Step:{validator.step} | "
                 )
 
