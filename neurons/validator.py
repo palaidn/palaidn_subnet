@@ -43,7 +43,7 @@ async def main(validator: PalaidnValidator):
             #     fraud_data_wallet = await fraud_data.fetch_wallet_data(paypangea_api_key)
             #     last_api_call = current_time
             log = (
-                    f"Version:{version} | "
+                    f"Version:{version} * | "
                     f"Step:{validator.step} | "
                 )
 
@@ -213,7 +213,7 @@ async def main(validator: PalaidnValidator):
                 bt.logging.error(f"Failed to reinitialize connection: {str(conn_error)}")
                 bt.logging.warning("Retrying in the next iteration.")
 
-                
+
 # if __name__ == "__main__":
 #     with PalaidnValidator() as validator:
 #         asyncio.get_event_loop().run_until_complete(main(validator))
