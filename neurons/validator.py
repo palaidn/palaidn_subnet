@@ -166,7 +166,7 @@ async def main(validator: PalaidnValidator):
             current_block = await validator.run_sync_in_async(lambda: validator.subtensor.block)
 
             bt.logging.debug(
-                f"Current Step: {validator.step}, Current block: {current_block}, last_updated_block: {validator.last_updated_block}"
+                f"Version:{version}, Current Step: {validator.step}, Current block: {current_block}, last_updated_block: {validator.last_updated_block}"
             )
                 
             if current_block - validator.last_updated_block > 300:
