@@ -198,11 +198,22 @@ async def main(validator: PalaidnValidator):
             bt.logging.debug("Sleeping for: 60 seconds")
             await asyncio.sleep(60)
 
-        except TimeoutError as e:
-            bt.logging.error(f"Error in main loop: {str(e)}")
-            # Attempt to reconnect if necessary
-            await self.initialize_connection()
+        except Exception as e:
+            # Log any unexpected errors
+            bt.logging.error(f"An error occurred in the main loop: {str(e)}")
+            bt.logging.info("Attempting to recover...")
 
+            # Optional: Sleep for a bit before retrying to avoid rapid loops in case of consistent errors
+            await asyncio.sleep(30)
+
+            # Try to reinitialize the connection if necessary
+            try:
+                await validator.initialize_connection()
+            except Exception as conn_error:
+                bt.logging.error(f"Failed to reinitialize connection: {str(conn_error)}")
+                bt.logging.warning("Retrying in the next iteration.")
+
+                
 # if __name__ == "__main__":
 #     with PalaidnValidator() as validator:
 #         asyncio.get_event_loop().run_until_complete(main(validator))
