@@ -135,7 +135,7 @@ cd palaidn_subnet
 python3 -m pip install -e .
 ```
 
-For auto-update funstion we require nodejs and npm installed, so in case you do not have it installed yet, install it with:
+For auto-update function we require nodejs and npm installed, so in case you do not have it installed yet, install it with:
 ```bash
 sudo apt install nodejs npm -y
 ```
