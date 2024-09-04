@@ -84,10 +84,13 @@ echo "PAYPANGEA_API_KEY=$PAYPANGEA_API_KEY" >> .env
 echo ".env file created successfully with your Alchemy API key and PayPangea API key."
 
 # Prompt for network if not specified
-prompt_for_input "Enter network (local/finney)" "${NETWORK:-finney}" "NETWORK"
+prompt_for_input "Enter network (local/finney/test)" "${NETWORK:-finney}" "NETWORK"
 case $NETWORK in
     finney)
         DEFAULT_NEURON_ARGS=" --netuid 14"
+        ;;
+    test)
+        DEFAULT_NEURON_ARGS=" --netuid 203 --subtensor.network test --validator_min_stake 10"
         ;;
     local)
         prompt_for_input "Enter network UID" "${NETWORK_UID:-14}" "NETWORK_UID"
