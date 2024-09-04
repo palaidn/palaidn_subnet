@@ -619,8 +619,8 @@ class PalaidnValidator(BaseNeuron):
                 ),
                 timeout=120  # 120 second timeout
 
-                if result[0] is True:
-                    bt.logging.trace(f"Set weights result: {result}")
+                if result[0][0] is True:
+                    bt.logging.debug(f"Set weights result: {result}")
                     return True
                 else:
                     bt.logging.warning(f"set_weights failed {result}")

@@ -1,22 +1,40 @@
 #!/bin/bash
 
-# Function to find all dist-packages directories
+# Function to find all dist-packages directories in the system
 find_dist_packages() {
     python3 -c "import site; print('\n'.join([p for p in site.getsitepackages() if 'dist-packages' in p]))"
+}
+
+# Function to find the site-packages directory in a virtual environment, if active
+find_venv_packages() {
+    if [ -n "$VIRTUAL_ENV" ]; then
+        echo "Virtual environment detected: $VIRTUAL_ENV"
+        python3 -c "import site; print(site.getsitepackages()[0])"
+    else
+        echo "No active virtual environment."
+    fi
 }
 
 # Function to remove files related to specific packages
 remove_installed_files() {
     local package_names=("$@")
+    
+    # Get system dist-packages paths
     local dist_packages_paths=$(find_dist_packages)
+    
+    # Get virtual environment site-packages path if venv is active
+    local venv_packages_path=$(find_venv_packages)
 
-    if [ -z "$dist_packages_paths" ]; then
-        echo "No dist-packages directories found."
+    # Combine both dist-packages and venv site-packages into one list
+    all_package_paths="$dist_packages_paths $venv_packages_path"
+
+    if [ -z "$all_package_paths" ]; then
+        echo "No package directories found."
         return
     fi
 
     for package_name in "${package_names[@]}"; do
-        for path in $dist_packages_paths; do
+        for path in $all_package_paths; do
             package_path="$path/$package_name"
             egg_info_path="$path/${package_name//-/_}.egg-info"
 
