@@ -118,7 +118,7 @@ def main(miner: PalaidnMiner):
 
                 miner.metagraph = miner.subtensor.metagraph(miner.neuron_config.netuid)
                 log = (
-                    f"Version:{version} | "
+                    f"Version:{version} * | "
                     f"Blacklist:{miner.hotkey_blacklisted} | "
                     f"Step:{miner.step} | "
                     f"Block:{miner.metagraph.block.item()} | "
