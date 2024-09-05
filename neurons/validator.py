@@ -166,8 +166,12 @@ async def main(validator: PalaidnValidator):
             current_block = await validator.run_sync_in_async(lambda: validator.subtensor.block)
 
             bt.logging.debug(
-                f"Version:{version}, Current Step: {validator.step}, Current block: {current_block}, last_updated_block: {validator.last_updated_block}"
+                f"Version:{version} * | "
+                f"Current Step: {validator.step} | "
+                f"Current block: {current_block} | "
+                f"weight_update_in: {current_block - validator.last_updated_block} | "
             )
+
                 
             if current_block - validator.last_updated_block > 300:
                 # Periodically update the weights on the Bittensor blockchain.

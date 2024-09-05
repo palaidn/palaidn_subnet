@@ -604,36 +604,47 @@ class PalaidnValidator(BaseNeuron):
             
             # self.subtensor.blocks_since_last_update(self.neuron_config.netuid, self.uid) > self.subtensor.weights_rate_limit(self.neuron_config.netuid)
 
+
         try:
+            # Check if enough blocks have passed since the last update
             if self.subtensor.blocks_since_last_update(self.neuron_config.netuid, self.uid) > self.subtensor.weights_rate_limit(self.neuron_config.netuid):
                 bt.logging.info("Attempting to set weights with 120 second timeout")
-                result = self.subtensor.set_weights(
-                    netuid=self.neuron_config.netuid,
-                    wallet=self.wallet,
-                    uids=self.metagraph.uids,
-                    weights=weights,
-                    version_key=self.spec_version,
-                    wait_for_inclusion=False,
-                    wait_for_finalization=True,
-                    max_retries=3
-                ),
-                timeout=120  # 120 second timeout
+                
+                # Run set_weights in a separate thread using asyncio.to_thread
+                result = await asyncio.wait_for(
+                    asyncio.to_thread(
+                        self.subtensor.set_weights,
+                        netuid=self.neuron_config.netuid,
+                        wallet=self.wallet,
+                        uids=self.metagraph.uids,
+                        weights=weights,
+                        version_key=self.spec_version,
+                        wait_for_inclusion=False,
+                        wait_for_finalization=True,
+                        max_retries=3
+                    ),
+                    timeout=120  # 120 second timeout
+                )
 
-                if result[0][0] is True:
+                # Process the result
+                if result[0] is True:
                     bt.logging.debug(f"Set weights result: {result}")
                     return True
                 else:
                     bt.logging.warning(f"set_weights failed {result}")
+
             else:
+                # If not enough blocks have passed, calculate the blocks to wait
                 blocks_since_last_update = self.subtensor.blocks_since_last_update(self.neuron_config.netuid, self.uid)
                 weights_rate_limit = self.subtensor.weights_rate_limit(self.neuron_config.netuid)
                 blocks_to_wait = weights_rate_limit - blocks_since_last_update
                 bt.logging.info(f"Need to wait {blocks_to_wait} more blocks to set weight.")
-        
+
         except asyncio.TimeoutError:
             bt.logging.error("Timeout occurred while setting weights (120 seconds elapsed).")
         except Exception as e:
             bt.logging.error(f"Error setting weight: {str(e)}")
+
 
         
         return False
