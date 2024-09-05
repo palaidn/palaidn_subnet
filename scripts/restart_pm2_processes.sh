@@ -130,6 +130,40 @@ if [ "$NEURON_TYPE" = "MINER" ]; then
     NEURON_SCRIPT="$(dirname "$0")/../neurons/miner.py"
 elif [ "$NEURON_TYPE" = "VALIDATOR" ]; then
     NEURON_SCRIPT="$(dirname "$0")/../neurons/validator.py"
+
+    # Path to the restart script
+    RESTART_SCRIPT="$(dirname "$0")/restart_vali.sh"
+
+    # Check if the restart_vali.sh script exists
+    if [ -f "$RESTART_SCRIPT" ]; then
+        echo "Found $RESTART_SCRIPT"
+
+        # Check if the process 'restart-vali' is already running in PM2
+        PROCESS_STATUS=$(pm2 list | grep "restart-vali")
+
+        if [ -n "$PROCESS_STATUS" ]; then
+            echo "Process 'restart-vali' is already running. Deleting it..."
+            pm2 delete restart-vali
+            
+            pm2 save --force
+            # Wait for 10 seconds after deleting the process
+            echo "Waiting for 10 seconds..."
+            sleep 10
+        fi
+
+        # Make the script executable
+        chmod +x "$RESTART_SCRIPT"
+
+        # Start the script with PM2 using a restart delay of 2 hours (7,200,000 ms)
+        echo "Starting 'restart-vali' with a 2-hour restart delay..."
+        pm2 start "$RESTART_SCRIPT" --name restart-vali --restart-delay=7200000 --watch
+
+        # Save the PM2 process list to ensure it's persistent
+        pm2 save --force
+        echo "PM2 process list saved."
+    else
+        echo "File $RESTART_SCRIPT not found. Procceding."
+    fi
 else
     echo "Unknown NEURON_TYPE: $NEURON_TYPE. Exiting."
     exit 1
