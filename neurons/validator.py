@@ -24,6 +24,9 @@ async def main(validator: PalaidnValidator):
 
     load_dotenv()
     paypangea_api_key = os.getenv('PAYPANGEA_API_KEY')
+    alchemy_api_key = os.getenv("ALCHEMY_API_KEY")
+
+    validator.alchemy_api_key = alchemy_api_key
 
     fraud_data = FraudData()
 
@@ -52,6 +55,8 @@ async def main(validator: PalaidnValidator):
 
             
             fraud_data_wallet = await fraud_data.fetch_wallet_data(paypangea_api_key)
+
+            validator.alchemy_transactions = None
 
             # Periodically sync subtensor status and save the state file
             if validator.step % 5 == 0:
@@ -200,7 +205,7 @@ async def main(validator: PalaidnValidator):
 
             # Sleep for a duration equivalent to the block time (i.e., time between successive blocks).
             bt.logging.debug("Sleeping for: 60 seconds")
-            await asyncio.sleep(60)
+            await asyncio.sleep(6)
 
         except Exception as e:
             # Log any unexpected errors
