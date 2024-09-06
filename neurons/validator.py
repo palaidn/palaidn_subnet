@@ -24,6 +24,9 @@ async def main(validator: PalaidnValidator):
 
     load_dotenv()
     paypangea_api_key = os.getenv('PAYPANGEA_API_KEY')
+    alchemy_api_key = os.getenv("ALCHEMY_API_KEY")
+
+    validator.alchemy_api_key = alchemy_api_key
 
     fraud_data = FraudData()
 
@@ -52,6 +55,8 @@ async def main(validator: PalaidnValidator):
 
             
             fraud_data_wallet = await fraud_data.fetch_wallet_data(paypangea_api_key)
+
+            validator.alchemy_transactions = None
 
             # Periodically sync subtensor status and save the state file
             if validator.step % 5 == 0:

@@ -41,7 +41,7 @@ class ScanWalletTransactions(BaseModel):
     transaction_date: str = Field(..., description="Date of the transaction")
     amount: str = Field(..., description="amount")
     token_symbol: str = Field(..., description="token symbol")
-    category: str = Field(..., description="token symbol")
+    category: str = Field(..., description="category")
     token_address: str = Field(..., description="address of erc20 ot nft token")
     
 
