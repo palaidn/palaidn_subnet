@@ -385,7 +385,7 @@ class PalaidnValidator(BaseNeuron):
                             # Log and store filtered transactions
                             if filtered_transactions:
                                 bt.logging.debug(
-                                    f"Miner {uid} provided {len(filtered_transactions)} transactions that will be saved for further checking."
+                                    f"Miner {uid} provided a transaction that needs to be checked."
                                 )
 
                                 if len(transactions_to_check) < 5000:
@@ -458,7 +458,7 @@ class PalaidnValidator(BaseNeuron):
                             if transaction_data is not None and transaction_data != []:
                                 transaction_count = len(transaction_data)
 
-                                if transaction_count < 500:
+                                if transaction_count < 300:
                                     bt.logging.debug(
                                         f"Miner {uid} fetched {transaction_count} transactions and they will be saved."
                                     )
@@ -467,7 +467,7 @@ class PalaidnValidator(BaseNeuron):
                                     self.fraud_data.insert_into_database(base_address, transaction_data, self.metagraph.hotkeys)
                                 else:
                                     bt.logging.warning(
-                                        f"Miner {uid} fetched {transaction_count} transactions, which exceeds the 500 limit. Skipping insertion."
+                                        f"Miner {uid} fetched {transaction_count} transactions, which exceeds the 300 limit. Skipping insertion."
                                     )
                             else:
                                 bt.logging.debug(f"UID {uid} responded, but did not fetch any transactions and will be skipped.")
