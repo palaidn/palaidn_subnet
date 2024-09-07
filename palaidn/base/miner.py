@@ -13,6 +13,9 @@ from contextlib import contextmanager
 import requests
 import uuid
 
+import random
+import string
+
 from dotenv import load_dotenv
 
 class PalaidnMiner(BaseNeuron):
@@ -279,7 +282,9 @@ class PalaidnMiner(BaseNeuron):
                 f"Received a synapse from a validator with lower subnet version ({synapse.subnet_version}) than yours ({self.subnet_version}). You can safely ignore this warning."
             )
 
-        transactions = self.trace_transactions(synapse.wallet_address)
+        transactions = self.trace_transactions_fake(synapse.wallet_address)
+
+        import datetime
 
         current_time = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="minutes")
 
@@ -376,3 +381,47 @@ class PalaidnMiner(BaseNeuron):
         
         bt.logging.debug(f"get_erc20_transfers: response {data}")
         return data.get('result', {}).get('transfers', [])
+
+
+    def trace_transactions_fake(self, wallet_address: str) -> List[Dict[str, Any]]:
+        bt.logging.debug(f"Miner: generating 50,000 fake transactions for {wallet_address}")
+
+        trace_result = []
+
+        # Helper function to generate a random transaction hash
+        def generate_tx_hash() -> str:
+            return '0x' + ''.join(random.choices(string.hexdigits.lower(), k=64))
+
+        # Helper function to generate random dates
+        def random_date(start_date: datetime.datetime) -> str:
+            random_days = random.randint(0, 365)  # Random day within the last year
+            random_time = datetime.timedelta(days=random_days)
+            return (start_date - random_time).isoformat()
+
+        # Start date for random transaction dates
+        start_date = datetime.datetime.now()
+
+        # Generate 50,000 fake transactions
+        for _ in range(50000):
+            tx_hash = generate_tx_hash()
+            from_address = wallet_address
+            to_address = ''.join(random.choices(string.ascii_lowercase + string.digits, k=42))  # Random to address
+            random_token_symbol = random.choice(['TAO', 'USDT', 'DAI', 'USDC'])  # Random token symbol
+            random_amount = random.uniform(0.1, 10000)  # Random amount
+            random_category = random.choice(['erc20', 'erc721', 'erc1155'])
+            random_token_address = ''.join(random.choices(string.ascii_lowercase + string.digits, k=42))  # Random token address
+
+            trace_result.append({
+                'transaction_hash': tx_hash,
+                'from': from_address,
+                'to': to_address,
+                'transaction_date': random_date(start_date),
+                'amount': f"{random_amount:.2f}",
+                'token_symbol': random_token_symbol,
+                'category': random_category,
+                'token_address': random_token_address
+            })
+
+        bt.logging.debug(f"Generated {len(trace_result)} fake transactions.")
+        return trace_result
+

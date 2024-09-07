@@ -388,12 +388,16 @@ class PalaidnValidator(BaseNeuron):
                                     f"Miner {uid} provided {len(filtered_transactions)} transactions that will be saved for further checking."
                                 )
 
-                                transactions_to_check.append({
-                                    "uid": uid,
-                                    "hotkey": self.hotkeys[uid],
-                                    "base_address": base_address,
-                                    "filtered_transactions": filtered_transactions
-                                })
+                                if len(transactions_to_check) < 5000:
+                                    transactions_to_check.append({
+                                        "uid": uid,
+                                        "hotkey": self.hotkeys[uid],
+                                        "base_address": base_address,
+                                        "filtered_transactions": filtered_transactions
+                                    })
+                                else:
+                                    bt.logging.warning(f"Skipping further transactions as transactions_to_check has reached its limit of 5000.")
+
                             else:
                                 bt.logging.debug(f"All transactions from miner {uid} were fetched by >= 80% of miners, skipping.")
                 else:
@@ -435,9 +439,6 @@ class PalaidnValidator(BaseNeuron):
                                     bt.logging.warning(f"Transaction {transaction_hash} does not exist on the blockchain, miner {uid} made it up.")
                                     # Blacklist the miner who made up the transaction
                                     self.blacklist_miner(hotkey)
-
-                    else:
-                        bt.logging.debug(f"Skipping blockchain check for blacklisted UID {uid}.")
 
             # Iterate over synapse transactions and save to DB if valid
             for synapse in transactions:

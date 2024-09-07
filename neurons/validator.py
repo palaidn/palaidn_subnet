@@ -205,7 +205,7 @@ async def main(validator: PalaidnValidator):
 
             # Sleep for a duration equivalent to the block time (i.e., time between successive blocks).
             bt.logging.debug("Sleeping for: 120 seconds")
-            await asyncio.sleep(120)
+            await asyncio.sleep(12)
 
 
         except Exception as e:
