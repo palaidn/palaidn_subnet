@@ -670,8 +670,8 @@ class PalaidnValidator(BaseNeuron):
                 self.scores = state["scores"]
                 self.hotkeys = state["hotkeys"]
                 self.last_updated_block = state["last_updated_block"]
-                if "blacklisted_miner_hotkeys" in state.keys():
-                    self.blacklisted_miner_hotkeys = state["blacklisted_miner_hotkeys"]
+                # if "blacklisted_miner_hotkeys" in state.keys():
+                #     self.blacklisted_miner_hotkeys = state["blacklisted_miner_hotkeys"]
 
                 bt.logging.info(f"scores loaded from saved file: {self.scores}")
             except Exception as e:
