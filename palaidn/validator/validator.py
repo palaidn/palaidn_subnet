@@ -351,61 +351,6 @@ class PalaidnValidator(BaseNeuron):
             # Define a threshold of 80%
             threshold = 0.8 
 
-            # # Iterate over synapse transactions
-            # for synapse in transactions:
-            #     # Ensure synapse has expected elements
-            #     if synapse.wallet_address:
-            #         transaction_data = synapse.transactions_dict
-            #         base_address = synapse.wallet_address
-            #         uid = synapse.neuron_uid
-
-            #         if self.hotkeys[uid] not in self.blacklisted_miner_hotkeys:
-            #             if uid == self.uid:
-            #                 bt.logging.debug(f"{uid} is offline or is not a miner")
-            #             else:
-            #                 # Ensure transaction_data is not None and not empty before processing
-            #                 if transaction_data is not None and transaction_data != []:
-            #                     bt.logging.debug(
-            #                         f"Miner {uid} fetched transactions and they will be checked: {len(transaction_data)}"
-            #                     )
-
-            #                     # Count how many miners fetched each transaction
-            #                     for txn in transaction_data:
-            #                         txn_id = txn.transaction_hash
-            #                         if txn_id:
-            #                             transaction_counter[txn_id] = transaction_counter.get(txn_id, 0) + 1
-
-            #                     # After counting, filter transactions to be checked (fetched by <80% of miners)
-            #                     filtered_transactions = [
-            #                         txn for txn in transaction_data
-            #                         if transaction_counter[txn.transaction_hash] < threshold or transaction_counter[txn.transaction_hash] < 5
-            #                     ]
-
-            #                     # Log and insert filtered transactions
-            #                     if filtered_transactions:
-            #                         bt.logging.debug(
-            #                             f"Miner {uid} provided {len(filtered_transactions)} transactions that will be saved for further checking."
-            #                         )
-
-            #                         # Store the uid, base_address, and filtered_transactions in transactions_to_check
-            #                         transactions_to_check.append({
-            #                             "uid": uid,
-            #                             "hotkey": self.hotkeys[uid],
-            #                             "base_address": base_address,
-            #                             "filtered_transactions": filtered_transactions
-            #                         })
-
-            #                     else:
-            #                         bt.logging.debug(f"All transactions from miner {uid} were fetched by >= 80% of miners, skipping.")
-
-                                
-            #                 else:
-            #                     bt.logging.debug(f"UID {uid} responded, but did not fetch any transactions and will be skipped.")
-            #         else:
-            #             bt.logging.warning("Miner was blacklisted, I do not care what he sends :)")
-            #     else:
-            #         bt.logging.warning("Synapse data is incomplete or not in the expected format.")
-
             # First pass: count how many miners fetched each transaction
             for synapse in transactions:
                 if synapse.wallet_address:
