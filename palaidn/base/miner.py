@@ -12,6 +12,14 @@ import threading
 from contextlib import contextmanager
 import requests
 import uuid
+import time
+
+from substrateinterface import Keypair
+
+from bittensor.errors import (
+    SynapseDendriteNoneException
+)
+from bittensor.constants import V_7_2_0
 
 from dotenv import load_dotenv
 
@@ -100,7 +108,6 @@ class PalaidnMiner(BaseNeuron):
             f"Miner stats initialized with miner instance"
         )
 
-
     def setup(self) -> Tuple[bt.wallet, bt.subtensor, bt.metagraph, str]:
         """This function sets up the neuron.
 
@@ -157,6 +164,73 @@ class PalaidnMiner(BaseNeuron):
 
         return wallet, subtensor, metagraph, miner_uid
 
+    def _to_nanoseconds(self, seconds: float) -> int:
+        return int(seconds * 1_000_000_000)
+
+    def _to_seconds(self, nanoseconds: int) -> float:
+        return float(nanoseconds / 1_000_000_000)
+    
+    async def verify(
+        self, synapse: PalaidnData
+    ) -> None:
+         # Build the keypair from the dendrite_hotkey
+        if synapse.dendrite is not None:
+            keypair = Keypair(ss58_address=synapse.dendrite.hotkey)
+
+            # Build the signature messages.
+            message = f"{synapse.dendrite.nonce}.{synapse.dendrite.hotkey}.{self.wallet.hotkey.ss58_address}.{synapse.dendrite.uuid}.{synapse.computed_body_hash}"
+
+            # Build the unique endpoint key.
+            endpoint_key = f"{synapse.dendrite.hotkey}:{synapse.dendrite.uuid}"
+
+            # Requests must have nonces to be safe from replays
+            if synapse.dendrite.nonce is None:
+                raise Exception("Missing Nonce")
+                        
+                        
+
+            if synapse.dendrite.version is not None and synapse.dendrite.version >= V_7_2_0:
+                bt.logging.debug(f"Using custom synapse verification logic")
+                # If we don't have a nonce stored, ensure that the nonce falls within
+                # a reasonable delta.
+                cur_time = time.time_ns()
+                
+                allowed_delta = min(self.config.neuron.synapse_verify_allowed_delta, self._to_nanoseconds(synapse.timeout or 0))
+                
+                latest_allowed_nonce = synapse.dendrite.nonce + allowed_delta                                
+                
+                bt.logging.debug(f"synapse.dendrite.nonce: {synapse.dendrite.nonce}")
+                bt.logging.debug(f"latest_allowed_nonce: {latest_allowed_nonce}")
+                bt.logging.debug(f"cur time: {cur_time}")
+                bt.logging.debug(f"delta: {self._to_seconds(cur_time - synapse.dendrite.nonce)}")
+                
+                if (
+                    self.nonces.get(endpoint_key) is None
+                    and synapse.dendrite.nonce > latest_allowed_nonce
+                ):
+                    raise Exception(f"Nonce is too old. Allowed delta in seconds: {self._to_seconds(allowed_delta)}, got delta: {self._to_seconds(cur_time - synapse.dendrite.nonce)}")
+                if (
+                    self.nonces.get(endpoint_key) is not None
+                    and synapse.dendrite.nonce <= self.nonces[endpoint_key]
+                ):
+                    raise Exception(f"Nonce is too small, already have a newer nonce in the nonce store, got: {synapse.dendrite.nonce}, already have: {self.nonces[endpoint_key]}")
+            else:
+                bt.logging.warning(f"Using synapse verification logic for version < 7.2.0: {synapse.dendrite.version}")
+                if (
+                    endpoint_key in self.nonces.keys()
+                    and self.nonces[endpoint_key] is not None
+                    and synapse.dendrite.nonce <= self.nonces[endpoint_key]
+                ):
+                    raise Exception(f"Nonce is too small, already have a newer nonce in the nonce store, got: {synapse.dendrite.nonce}, already have: {self.nonces[endpoint_key]}")
+
+            if not keypair.verify(message, synapse.dendrite.signature):
+                raise Exception(
+                    f"Signature mismatch with {message} and {synapse.dendrite.signature}, from hotkey {synapse.dendrite.hotkey}"
+                )
+
+            # Success
+            self.nonces[endpoint_key] = synapse.dendrite.nonce  # type: ignore
+            
     def check_whitelist(self, hotkey):
         """
         Checks if a given validator hotkey has been whitelisted.
@@ -312,7 +386,6 @@ class PalaidnMiner(BaseNeuron):
 
         return synapse
 
-
     def hotkey_exists_in_file(self, file_path, hotkey):
         if not os.path.exists(file_path):
             return False
@@ -345,8 +418,6 @@ class PalaidnMiner(BaseNeuron):
             })
 
         return trace_result
-
-
 
     def get_erc20_transfers(self, wallet_address: str) -> List[Dict[str, Any]]:
         url = f"https://eth-mainnet.g.alchemy.com/v2/{self.alchemy_api_key}"

@@ -185,6 +185,20 @@ if __name__ == "__main__":
         help="Determine the minimum stake the validator should have to accept requests",
     )
 
+    parser.add_argument(
+        "--neuron.disable_verification",
+        action="store_true",
+        help="If set, miners will accept queries without verifying. (Dangerous!)",
+        default=False,
+    )           
+
+    parser.add_argument(
+        "--neuron.synapse_verify_allowed_delta",
+        type=int,
+        help="The allowed delta for synapse verification in nanoseconds.",
+        default=10_000_000_000, # 10 seconds
+    )
+
     # Create a miner based on the Class definitions
     subnet_miner = PalaidnMiner(parser=parser)
 
