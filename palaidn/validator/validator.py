@@ -490,19 +490,20 @@ class PalaidnValidator(BaseNeuron):
                             f"failed to add new miner to the database: {hotkey}"
                         )
 
-    def blacklist_miner(self, uid):
-        """Add the miner UID to the blacklist."""
-        
+
+    def blacklist_miner(self, hotkey):
+        """Add the miner  to the blacklist."""
+
         # Initialize as an empty set if it's None
         if self.blacklisted_miner_hotkeys is None:
             self.blacklisted_miner_hotkeys = set()
 
         # Add the hotkey to the blacklist if it's not already present
-        if uid not in self.blacklisted_miner_hotkeys:
-            self.blacklisted_miner_hotkeys.append(uid)
+        if hotkey not in self.blacklisted_miner_hotkeys:
+            self.blacklisted_miner_hotkeys.append(hotkey)
 
             self.save_state()
-            bt.logging.info(f"Miner {uid} has been blacklisted.")
+            bt.logging.info(f"Miner {hotkey} has been blacklisted.")
 
 
     def check_hotkeys(self):
@@ -879,7 +880,8 @@ class PalaidnValidator(BaseNeuron):
         if not self.alchemy_transactions:
             try:
                 # Reset alchemy_transactions and populate it with the latest transfers with a timeout
-                self. = self.get_erc20_transfers(base_address, timeout=10)  # Set a 10-second timeout
+                self.alchemy_transactions = self.get_erc20_transfers(base_address, timeout=10)  # Set a 10-second timeout
+
             except requests.Timeout:
                 bt.logging.error(f"Timeout occurred while fetching ERC20 transfers for {base_address}.")
                 return [False, True]  # Error occurred
