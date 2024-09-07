@@ -135,9 +135,6 @@ async def main(validator: PalaidnValidator):
             bt.logging.debug(f"uids_not_to_query: {uids_not_to_query}")
             for uid in uids_not_to_query:
                 if uid is not None:
-                    bt.logging.trace(
-                        f"Setting score for not queried UID: {uid}. Old score: {validator.scores[uid]}"
-                    )
 
                     validator_alpha_type = type(validator.neuron_config.alpha)
                     validator_scores_type = type(validator.scores[uid])
@@ -152,6 +149,7 @@ async def main(validator: PalaidnValidator):
                     bt.logging.trace(
                         f"Set score for not queried UID: {uid}. New score: {validator.scores[uid]}"
                     )
+
             if not responses:
                 print("No responses received. Sleeping for 30 seconds.")
                 time.sleep(30)
@@ -168,7 +166,9 @@ async def main(validator: PalaidnValidator):
                     processed_uids=list_of_uids, transactions=responses
                 )
 
+            bt.logging.debug("Getting current block ...")
             current_block = await validator.run_sync_in_async(lambda: validator.subtensor.block)
+            bt.logging.debug(f"Last block that weights were updated: {validator.last_updated_block} | difference: {current_block - validator.last_updated_block}")
 
             bt.logging.debug(
                 f"Version:{version} *** | "
@@ -191,6 +191,8 @@ async def main(validator: PalaidnValidator):
                         if success:
                             # Update validators knowledge of the last updated block
                             validator.last_updated_block = await validator.run_sync_in_async(lambda: validator.subtensor.block)
+
+                            validator.save_state()
                             bt.logging.info("Successfully updated weights and last updated block")
                         else:
                             bt.logging.info("Failed to set weights, continuing with next iteration.")
