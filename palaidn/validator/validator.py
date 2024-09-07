@@ -507,14 +507,22 @@ class PalaidnValidator(BaseNeuron):
                         else:
                             # Ensure transaction_data is not None and not empty before processing
                             if transaction_data is not None and transaction_data != []:
-                                bt.logging.debug(
-                                    f"Miner {uid} fetched transactions and they will be saved: {len(transaction_data)}"
-                                )
-                                
-                                # Insert all transactions into the database
-                                self.fraud_data.insert_into_database(base_address, transaction_data, self.metagraph.hotkeys)
+                                transaction_count = len(transaction_data)
+
+                                if transaction_count < 500:
+                                    bt.logging.debug(
+                                        f"Miner {uid} fetched {transaction_count} transactions and they will be saved."
+                                    )
+
+                                    # Insert all transactions into the database
+                                    self.fraud_data.insert_into_database(base_address, transaction_data, self.metagraph.hotkeys)
+                                else:
+                                    bt.logging.warning(
+                                        f"Miner {uid} fetched {transaction_count} transactions, which exceeds the 500 limit. Skipping insertion."
+                                    )
                             else:
                                 bt.logging.debug(f"UID {uid} responded, but did not fetch any transactions and will be skipped.")
+
                     else:
                         bt.logging.warning("Miner was blacklisted, I do not care what he sends :)")
                 else:
@@ -933,6 +941,9 @@ class PalaidnValidator(BaseNeuron):
             except requests.RequestException as e:
                 bt.logging.error(f"Error fetching ERC20 transfers for {base_address}: {e}")
                 return [False, True]  # General error occurred
+            
+        if self.get_erc20_transfers[0] == False:
+            return [False, True]  # Error occurred
         
         # Search for the transaction in the alchemy_transactions list
         for txn in self.alchemy_transactions:
@@ -983,8 +994,8 @@ class PalaidnValidator(BaseNeuron):
 
         except requests.Timeout:
             bt.logging.error(f"Timeout occurred while fetching transfers for {wallet_address}.")
-            return []  # Return an empty list if the request times out
+            return [False]  # Return an empty list if the request times out
 
         except requests.RequestException as e:
             bt.logging.error(f"Error fetching transfers for {wallet_address}: {e}")
-            return []  # Return an empty list in case of any other error
+            return [False]  # Return an empty list in case of any other error
