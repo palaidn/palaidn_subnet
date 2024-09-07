@@ -207,6 +207,7 @@ async def main(validator: PalaidnValidator):
             bt.logging.debug("Sleeping for: 120 seconds")
             await asyncio.sleep(120)
 
+
         except Exception as e:
             # Log any unexpected errors
             bt.logging.error(f"An error occurred in the main loop: {str(e)}")
