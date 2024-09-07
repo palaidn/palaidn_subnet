@@ -42,10 +42,18 @@ class FraudData:
         # Run migrations after creating the initial tables
         run_migrations(self.db_name)
 
+
     def insert_into_database(self, base_address, transaction_data, hotkeys):
         conn = sqlite3.connect(self.db_name)
         c = conn.cursor()
 
+        # Prepare a list to hold batch inserts
+        transactions_to_insert = []
+        update_queries = []
+
+        now = datetime.now(timezone.utc).isoformat()
+
+        # Iterate over the transactions and prepare the data
         for tx in transaction_data:
             try:
                 amount = tx.amount
@@ -67,51 +75,70 @@ class FraudData:
 
                 exists = c.fetchone()
 
-                # bt.logging.info(f"exists {exists}.")
-
                 if exists and exists[0] > 0:
-                    # If the transaction exists, update the scan_date
-                    c.execute(
-                        """UPDATE wallet_transactions
-                        SET scan_date = ?
-                        WHERE miner_wallet = ? AND transaction_hash = ?""",
+                    # If the transaction exists, prepare the update query
+                    update_queries.append(
                         (now, minerWallet, tx.transaction_hash)
                     )
-                    conn.commit()
-                    # bt.logging.info(f"Updated scan_date for transaction {tx.transaction_hash} for miner wallet {minerWallet} - {tx.scanDate}.")
                 else:
-                    # If the transaction does not exist, insert it
-                    c.execute(
-                        """INSERT INTO wallet_transactions (
-                            id, wallet_address, base_address, transaction_hash, transaction_date, 
-                            amount, token_symbol, category, token_address, is_fraudulent, scanID, minerID, miner_wallet, scan_date, sender, receiver)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?)""",
-                        (
-                            str(uuid.uuid4()),
-                            tx.sender,
-                            base_address,
-                            tx.transaction_hash,
-                            tx.transaction_date,
-                            amount,
-                            tx.token_symbol,
-                            tx.category,
-                            tx.token_address,
-                            tx.scanID,
-                            tx.minerID,
-                            minerWallet,
-                            now,
-                            tx.sender,
-                            tx.receiver
-                        )
-                    )
-                    conn.commit()
-                    # bt.logging.info(f"Inserted new transaction {tx.transaction_hash} for miner wallet {minerWallet}.")
+                    # If the transaction does not exist, prepare it for batch insert
+                    transactions_to_insert.append((
+                        str(uuid.uuid4()),
+                        tx.sender,
+                        base_address,
+                        tx.transaction_hash,
+                        tx.transaction_date,
+                        amount,
+                        tx.token_symbol,
+                        tx.category,
+                        tx.token_address,
+                        1,  # is_fraudulent (assuming you want to set this to 1)
+                        tx.scanID,
+                        tx.minerID,
+                        minerWallet,
+                        now,
+                        tx.sender,
+                        tx.receiver
+                    ))
+
             except sqlite3.Error as e:
-                bt.logging.error(f"Error inserting transaction {tx.transaction_hash} into database: {e}")
+                bt.logging.error(f"Error preparing transaction {tx.transaction_hash} for database: {e}")
                 conn.rollback()
 
-        conn.close()
+        # Perform the batch insert for new transactions
+        if transactions_to_insert:
+            try:
+                c.executemany(
+                    """INSERT INTO wallet_transactions (
+                        id, wallet_address, base_address, transaction_hash, transaction_date, 
+                        amount, token_symbol, category, token_address, is_fraudulent, scanID, minerID, miner_wallet, scan_date, sender, receiver)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    transactions_to_insert
+                )
+                bt.logging.info(f"Inserted {len(transactions_to_insert)} new transactions into the database.")
+            except sqlite3.Error as e:
+                bt.logging.error(f"Error inserting transactions in batch: {e}")
+                conn.rollback()
 
+        # Perform batch updates for existing transactions
+        if update_queries:
+            try:
+                c.executemany(
+                    """UPDATE wallet_transactions
+                    SET scan_date = ?
+                    WHERE miner_wallet = ? AND transaction_hash = ?""",
+                    update_queries
+                )
+                bt.logging.info(f"Updated scan_date for {len(update_queries)} transactions.")
+            except sqlite3.Error as e:
+                bt.logging.error(f"Error updating transactions in batch: {e}")
+                conn.rollback()
+
+        # Commit once after all transactions are handled
+        conn.commit()
+
+        # Close the database connection
+        conn.close()
 
 
     def mark_as_fraudulent(self, transaction_hash):

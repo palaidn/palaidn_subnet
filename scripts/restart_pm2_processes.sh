@@ -3,29 +3,39 @@
 # Source the user's profile to ensure all necessary environment variables are set
 source ~/.profile
 
+# Check if jq is installed; if not, install it
+if ! command -v jq &> /dev/null; then
+    echo "jq is not installed. Installing jq..."
+    sudo apt-get update && sudo apt-get install -y jq
+    if [ $? -ne 0 ]; then
+        echo "Failed to install jq. Exiting."
+        exit 1
+    fi
+else
+    echo "jq is already installed."
+fi
+
 # Use the full path to PM2
 PM2_PATH=$(which pm2)
+
+# Restart the auto_updater process if it is running
+AUTO_UPDATER_PROCESS=$($PM2_PATH list | grep "auto-updater")
+
+if [ -n "$AUTO_UPDATER_PROCESS" ]; then
+    echo "auto_updater process found. Restarting it..."
+    $PM2_PATH restart "auto-updater"
+    echo "auto_updater process restarted."
+else
+    echo "No auto_updater process found."
+fi
 
 # Define paths to the potential start_var files
 START_VAR_MINER="$(dirname "$0")/../.start_var_miner"
 START_VAR_VALIDATOR="$(dirname "$0")/../.start_var_validator"
 
-# Check if either .start_var_miner or .start_var_validator exists
-if [ -f "$START_VAR_MINER" ] || [ -f "$START_VAR_VALIDATOR" ]; then
-    echo "One of the start_var files exists."
-    if [ -f "$START_VAR_MINER" ]; then
-        echo "Loading variables from $START_VAR_MINER..."
-        source "$START_VAR_MINER"
-    elif [ -f "$START_VAR_VALIDATOR" ]; then
-        echo "Loading variables from $START_VAR_VALIDATOR..."
-        source "$START_VAR_VALIDATOR"
-    fi
-else
-    echo "No start_var file found. Proceeding to check PM2 processes..."
-
+# Function to process PM2 processes
+process_pm2() {
     # Iterate through all PM2 processes
-     # Iterate through all PM2 processes
-      # Use pm2 jlist to get details of all processes
     pm2 jlist | jq -c '.[]' | while read -r process; do
         # Extract the necessary details using jq
         INSTANCE_NAME=$(echo "$process" | jq -r '.name')
@@ -43,7 +53,7 @@ else
             NETUID="14"
         fi
 
-        # Process only if netuid is 14 or 203, or is someone is still running old 45 netuid
+        # Process only if netuid is 14 or 203, or if someone is still running the old 45 netuid
         if [ "$NETUID" = "14" ] || [ "$NETUID" = "203" ]; then
             # Initialize variables
             NEURON_TYPE=""
@@ -57,7 +67,7 @@ else
             LOGGING_LEVEL="debug"
             DEFAULT_NEURON_ARGS="$ARGS"
 
-            echo "found process $INSTANCE_NAME"
+            echo "Found process $INSTANCE_NAME"
 
             # Determine the type and set the output file accordingly
             if [[ "$SCRIPT_PATH" == *"miner"* ]]; then
@@ -68,8 +78,7 @@ else
                 OUTPUT_FILE="$START_VAR_VALIDATOR"
             fi
 
-
-            echo "repo root: $REPO_ROOT"
+            echo "Repo root: $REPO_ROOT"
 
             # Write to the appropriate output file
             if [ -n "$OUTPUT_FILE" ]; then
@@ -87,19 +96,33 @@ else
                     [ -n "$AXON" ] && echo "AXON=$AXON"
                     [ -n "$DEFAULT_NEURON_ARGS" ] && echo "DEFAULT_NEURON_ARGS=\"$DEFAULT_NEURON_ARGS\""
                     [ -n "$INSTANCE_NAME" ] && echo "INSTANCE_NAME=$INSTANCE_NAME"
-                } >> "$OUTPUT_FILE"  # Note: '>>' is used to append if necessary
+                } >> "$OUTPUT_FILE"
                 echo "Variables written to $OUTPUT_FILE"
             fi
         fi
     done
-fi
+}
 
-# exit 1
+# Check if either .start_var_miner or .start_var_validator exists
+if [ -f "$START_VAR_MINER" ] || [ -f "$START_VAR_VALIDATOR" ]; then
+    echo "One of the start_var files exists."
+else
+    echo "No start_var file found. Proceeding to check PM2 processes..."
+    process_pm2
+fi
 
 # Ensure INSTANCE_NAME, DEFAULT_NEURON_ARGS, and NEURON_TYPE are loaded from start_var
 if [ -z "$INSTANCE_NAME" ] || [ -z "$DEFAULT_NEURON_ARGS" ] || [ -z "$NEURON_TYPE" ]; then
-    echo "INSTANCE_NAME, DEFAULT_NEURON_ARGS, or NEURON_TYPE not found in start_var. Exiting."
-    exit 1
+    echo "INSTANCE_NAME, DEFAULT_NEURON_ARGS, or NEURON_TYPE not found in start_var. Proceeding to check PM2 processes..."
+    process_pm2
+fi
+
+if [ -f "$START_VAR_MINER" ]; then
+    echo "Loading variables from $START_VAR_MINER..."
+    source "$START_VAR_MINER"
+elif [ -f "$START_VAR_VALIDATOR" ]; then
+    echo "Loading variables from $START_VAR_VALIDATOR..."
+    source "$START_VAR_VALIDATOR"
 fi
 
 # Determine which script to start based on NEURON_TYPE
@@ -107,6 +130,40 @@ if [ "$NEURON_TYPE" = "MINER" ]; then
     NEURON_SCRIPT="$(dirname "$0")/../neurons/miner.py"
 elif [ "$NEURON_TYPE" = "VALIDATOR" ]; then
     NEURON_SCRIPT="$(dirname "$0")/../neurons/validator.py"
+
+    # Path to the restart script
+    RESTART_SCRIPT="$(dirname "$0")/restart_vali.sh"
+
+    # Check if the restart_vali.sh script exists
+    if [ -f "$RESTART_SCRIPT" ]; then
+        echo "Found $RESTART_SCRIPT"
+
+        # Check if the process 'restart-vali' is already running in PM2
+        PROCESS_STATUS=$(pm2 list | grep "restart-vali")
+
+        if [ -n "$PROCESS_STATUS" ]; then
+            echo "Process 'restart-vali' is already running. Deleting it..."
+            pm2 delete restart-vali
+            
+            pm2 save --force
+            # Wait for 10 seconds after deleting the process
+            echo "Waiting for 10 seconds..."
+            sleep 10
+        fi
+
+        # Make the script executable
+        chmod +x "$RESTART_SCRIPT"
+
+        # Start the script with PM2 using a restart delay of 2 hours (7,200,000 ms)
+        echo "Starting 'restart-vali' with a 2-hour restart delay..."
+        pm2 start "$RESTART_SCRIPT" --name restart-vali --restart-delay=7200000 --watch
+
+        # Save the PM2 process list to ensure it's persistent
+        pm2 save --force
+        echo "PM2 process list saved."
+    else
+        echo "File $RESTART_SCRIPT not found. Procceding."
+    fi
 else
     echo "Unknown NEURON_TYPE: $NEURON_TYPE. Exiting."
     exit 1

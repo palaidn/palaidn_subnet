@@ -24,6 +24,9 @@ async def main(validator: PalaidnValidator):
 
     load_dotenv()
     paypangea_api_key = os.getenv('PAYPANGEA_API_KEY')
+    alchemy_api_key = os.getenv("ALCHEMY_API_KEY")
+
+    validator.alchemy_api_key = alchemy_api_key
 
     fraud_data = FraudData()
 
@@ -43,7 +46,7 @@ async def main(validator: PalaidnValidator):
             #     fraud_data_wallet = await fraud_data.fetch_wallet_data(paypangea_api_key)
             #     last_api_call = current_time
             log = (
-                    f"Version:{version} | "
+                    f"Version:{version} *** | "
                     f"Step:{validator.step} | "
                 )
 
@@ -52,6 +55,8 @@ async def main(validator: PalaidnValidator):
 
             
             fraud_data_wallet = await fraud_data.fetch_wallet_data(paypangea_api_key)
+
+            validator.alchemy_transactions = None
 
             # Periodically sync subtensor status and save the state file
             if validator.step % 5 == 0:
@@ -166,8 +171,12 @@ async def main(validator: PalaidnValidator):
             current_block = await validator.run_sync_in_async(lambda: validator.subtensor.block)
 
             bt.logging.debug(
-                f"Current Step: {validator.step}, Current block: {current_block}, last_updated_block: {validator.last_updated_block}"
+                f"Version:{version} *** | "
+                f"Current Step: {validator.step} | "
+                f"Current block: {current_block} | "
+                f"weight_update_in: {current_block - validator.last_updated_block} | "
             )
+
                 
             if current_block - validator.last_updated_block > 300:
                 # Periodically update the weights on the Bittensor blockchain.
@@ -198,10 +207,21 @@ async def main(validator: PalaidnValidator):
             bt.logging.debug("Sleeping for: 120 seconds")
             await asyncio.sleep(120)
 
-        except TimeoutError as e:
-            bt.logging.error(f"Error in main loop: {str(e)}")
-            # Attempt to reconnect if necessary
-            await self.initialize_connection()
+        except Exception as e:
+            # Log any unexpected errors
+            bt.logging.error(f"An error occurred in the main loop: {str(e)}")
+            bt.logging.info("Attempting to recover...")
+
+            # Optional: Sleep for a bit before retrying to avoid rapid loops in case of consistent errors
+            await asyncio.sleep(30)
+
+            # Try to reinitialize the connection if necessary
+            try:
+                await validator.initialize_connection()
+            except Exception as conn_error:
+                bt.logging.error(f"Failed to reinitialize connection: {str(conn_error)}")
+                bt.logging.warning("Retrying in the next iteration.")
+
 
 # if __name__ == "__main__":
 #     with PalaidnValidator() as validator:

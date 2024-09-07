@@ -1,6 +1,6 @@
 # Palaidn - Decentralized Fraud Detection on Bittensor
 
-**Harnessing the power of decentralization for fraud detection. Learn how Palaidn leverages the Bittensor Network to offer robust fraud detection through a unique incentive mechanism for miners and validators.**
+**Harnessing the power of decentralization for fraud detection and compliance system. Learn how Palaidn leverages the Bittensor Network to offer robust fraud detection for the blockchain community.**
 
 ![Palaidn](docs/palaidn.png)
 
@@ -19,7 +19,7 @@ In addition to transaction monitoring, Palaidn leverages AI to scan for vulnerab
 :link:**Useful Links:** <br>
 
 - [webpage](https://www.palaidn.com) <br>
-- [GitHub](https://github.com/palaidn/palaidn-subnet)
+- [GitHub](https://github.com/palaidn/palaidn_subnet)
 
 # The Palaidn.com Ecosystem
 
@@ -72,23 +72,19 @@ Miners are motivated to outperform each other in identifying genuine frauds, ens
 
 # Roadmap
 
-**August 2024**
+**September 2024**
 - Subnet launch
-- Paypangea integration
 - Add user interface for easy address check
 
-**September 2024**
-- Integrate Subnet 15 for data acquisition
+**October 2024**
 - Integrate Subnet 13 for data sourcing
 - Add more sources of data
 - API for wallet and transaction check
 
 **Q4 2024**
-- Integrate Subnet 22 for data sourcing
 - AI for wallet and transaction scan
-- Add AI dependencies scanning for code vulnerabilities
 
-**Q1 2025**
+**2025**
 - Free and paid tiers, pay usage with TAO
 - Double revenue source for our miner and validators
 
@@ -137,11 +133,9 @@ btcli subnet register --netuid 14 --wallet.name <name> --wallet.hotkey <name>
 git clone https://github.com/palaidn/palaidn_subnet.git
 cd palaidn_subnet
 python3 -m pip install -e .
-python3 setup.py install_lib
-python3 setup.py build
 ```
 
-For auto-update funstion we require nodejs and npm installed, so in case you do not have it installed yet, install it with:
+For auto-update function we require nodejs and npm installed, so in case you do not have it installed yet, install it with:
 ```bash
 sudo apt install nodejs npm -y
 ```

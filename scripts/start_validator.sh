@@ -21,7 +21,7 @@ fi
 # Clear the output file first
 : > "$START_VAR_FILE"
 
-DISABLE_AUTO_UPDATE="${DISABLE_AUTO_UPDATE:-false}"
+DISABLE_AUTO_UPDATE="false"
 
 echo "NEURON_TYPE=VALIDATOR" >> "$START_VAR_FILE"
 
@@ -130,31 +130,31 @@ case $LOGGING_LEVEL in
 esac
 
 # Prompt for disabling auto-update if not specified
-if [ "$DISABLE_AUTO_UPDATE" = "false" ]; then
-    prompt_yes_no "Do you want to disable auto-update? Warning: this will apply to all running neurons" "DISABLE_AUTO_UPDATE"
-fi
+# if [ "$DISABLE_AUTO_UPDATE" = "false" ]; then
+#     prompt_yes_no "Do you want to disable auto-update? Warning: this will apply to all running neurons" "DISABLE_AUTO_UPDATE"
+# fi
 
 # Save the auto-update status to start_var
 echo "DISABLE_AUTO_UPDATE=\"$DISABLE_AUTO_UPDATE\"" >> "$START_VAR_FILE"
 
 # Handle auto-updater
-if [ "$DISABLE_AUTO_UPDATE" = "false" ]; then
-    if ! is_auto_updater_running; then
-        pm2 start scripts/auto_update.sh --name "auto-updater"
-        echo "Auto-updater started."
-    else
-        pm2 restart scripts/auto_update.sh --name "auto-updater"
-        echo "Auto-updater is already running."
-    fi
+# if [ "$DISABLE_AUTO_UPDATE" = "false" ]; then
+if ! is_auto_updater_running; then
+    pm2 start scripts/auto_update.sh --name "auto-updater"
+    echo "Auto-updater started."
 else
-    if is_auto_updater_running; then
-        pm2 stop auto-updater
-        pm2 delete auto-updater
-        echo "Auto-updater has been stopped and removed."
-    else
-        echo "Auto-updater is not running."
-    fi
+    pm2 restart scripts/auto_update.sh --name "auto-updater"
+    echo "Auto-updater is already running."
 fi
+# else
+#     if is_auto_updater_running; then
+#         pm2 stop auto-updater
+#         pm2 delete auto-updater
+#         echo "Auto-updater has been stopped and removed."
+#     else
+#         echo "Auto-updater is not running."
+#     fi
+# fi
 
 prompt_for_input "Enter instance name" "${INSTANCE_NAME:-subnet14validator}" "INSTANCE_NAME"
 
@@ -192,3 +192,38 @@ pm2 save --force
 
 # Output confirmation of saved variables
 echo "All variables have been saved to $START_VAR_FILE"
+
+# Path to the restart script
+
+RESTART_SCRIPT="$REPO_ROOT/scripts/restart_vali.sh"
+
+# Check if the restart_vali.sh script exists
+if [ -f "$RESTART_SCRIPT" ]; then
+    echo "Found $RESTART_SCRIPT"
+
+    # Check if the process 'restart-vali' is already running in PM2
+    PROCESS_STATUS=$(pm2 list | grep "restart-vali")
+
+    if [ -n "$PROCESS_STATUS" ]; then
+        echo "Process 'restart-vali' is already running. Deleting it..."
+        pm2 delete restart-vali
+        
+        pm2 save --force
+        # Wait for 10 seconds after deleting the process
+        echo "Waiting for 10 seconds..."
+        sleep 10
+    fi
+
+    # Make the script executable
+    chmod +x "$RESTART_SCRIPT"
+
+    # Start the script with PM2 using a restart delay of 2 hours (7,200,000 ms)
+    echo "Starting 'restart-vali' with a 2-hour restart delay..."
+    pm2 start "$RESTART_SCRIPT" --name restart-vali --restart-delay=7200000 --watch
+
+    # Save the PM2 process list to ensure it's persistent
+    pm2 save --force
+    echo "PM2 process list saved."
+else
+    echo "File $RESTART_SCRIPT not found. Procceding."
+fi
