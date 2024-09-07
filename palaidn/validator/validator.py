@@ -879,7 +879,7 @@ class PalaidnValidator(BaseNeuron):
         if not self.alchemy_transactions:
             try:
                 # Reset alchemy_transactions and populate it with the latest transfers with a timeout
-                self.alchemy_transactions = self.get_erc20_transfers(base_address, timeout=10)  # Set a 10-second timeout
+                self. = self.get_erc20_transfers(base_address, timeout=10)  # Set a 10-second timeout
             except requests.Timeout:
                 bt.logging.error(f"Timeout occurred while fetching ERC20 transfers for {base_address}.")
                 return [False, True]  # Error occurred
@@ -887,7 +887,7 @@ class PalaidnValidator(BaseNeuron):
                 bt.logging.error(f"Error fetching ERC20 transfers for {base_address}: {e}")
                 return [False, True]  # General error occurred
             
-        if self.get_erc20_transfers[0] == False:
+        if self.alchemy_transactions[0] == False:
             return [False, True]  # Error occurred
         
         # Search for the transaction in the alchemy_transactions list
