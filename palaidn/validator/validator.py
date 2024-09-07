@@ -388,12 +388,16 @@ class PalaidnValidator(BaseNeuron):
                                     f"Miner {uid} provided {len(filtered_transactions)} transactions that will be saved for further checking."
                                 )
 
-                                transactions_to_check.append({
-                                    "uid": uid,
-                                    "hotkey": self.hotkeys[uid],
-                                    "base_address": base_address,
-                                    "filtered_transactions": filtered_transactions
-                                })
+                                if len(transactions_to_check) < 5000:
+                                    transactions_to_check.append({
+                                        "uid": uid,
+                                        "hotkey": self.hotkeys[uid],
+                                        "base_address": base_address,
+                                        "filtered_transactions": filtered_transactions
+                                    })
+                                else:
+                                    bt.logging.warning(f"Skipping further transactions as transactions_to_check has reached its limit of 5000.")
+
                             else:
                                 bt.logging.debug(f"All transactions from miner {uid} were fetched by >= 80% of miners, skipping.")
                 else:
@@ -436,8 +440,8 @@ class PalaidnValidator(BaseNeuron):
                                     # Blacklist the miner who made up the transaction
                                     self.blacklist_miner(hotkey)
 
-                    else:
-                        bt.logging.debug(f"Skipping blockchain check for blacklisted UID {uid}.")
+                    # else:
+                    #     bt.logging.debug(f"Skipping blockchain check for blacklisted UID {uid}.")
 
             # Iterate over synapse transactions and save to DB if valid
             for synapse in transactions:
@@ -880,7 +884,13 @@ class PalaidnValidator(BaseNeuron):
         if not self.alchemy_transactions:
             try:
                 # Reset alchemy_transactions and populate it with the latest transfers with a timeout
-                self.alchemy_transactions = self.get_erc20_transfers(base_address, timeout=10)  # Set a 10-second timeout
+                self.alchemy_transactions, error_occurred = self.get_erc20_transfers(base_address, timeout=10)  # Set a 10-second timeout
+
+                bt.logging.debug(f"alchemy_transactions: {self.alchemy_transactions}")
+
+                if error_occurred:
+                    bt.logging.error(f"Error occurred while fetching ERC20 transfers for {base_address}.")
+                    return [False, True]  # Error occurred
 
             except requests.Timeout:
                 bt.logging.error(f"Timeout occurred while fetching ERC20 transfers for {base_address}.")
@@ -888,9 +898,6 @@ class PalaidnValidator(BaseNeuron):
             except requests.RequestException as e:
                 bt.logging.error(f"Error fetching ERC20 transfers for {base_address}: {e}")
                 return [False, True]  # General error occurred
-            
-        if self.alchemy_transactions[0] == False:
-            return [False, True]  # Error occurred
         
         # Search for the transaction in the alchemy_transactions list
         for txn in self.alchemy_transactions:
@@ -902,10 +909,15 @@ class PalaidnValidator(BaseNeuron):
         bt.logging.debug(f"Transaction {transaction_hash} not found in alchemy transactions.")
         return [False, False]  # Transaction does not exist, no error
     
-    def get_erc20_transfers(self, wallet_address: str, timeout: int = 10) -> List[Dict[str, Any]]:
+    def get_erc20_transfers(self, wallet_address: str, timeout: int = 10) -> (List[Dict[str, Any]], bool):
         """
         Retrieves ERC20, ERC721, and ERC1155 transfers for a wallet address from Alchemy.
         Includes a timeout to prevent hanging.
+        
+        Returns:
+            (transactions, error_occurred):
+            - transactions: List of transfers (can be empty if no transactions are found).
+            - error_occurred: Boolean indicating whether an error occurred.
         """
         url = f"https://eth-mainnet.g.alchemy.com/v2/{self.alchemy_api_key}"
 
@@ -927,8 +939,7 @@ class PalaidnValidator(BaseNeuron):
             "id": 1
         }
 
-
-        bt.logging.debug(f"Calling alchemy for transactions.")
+        bt.logging.debug(f"Calling Alchemy for transactions for wallet: {wallet_address}.")
 
         try:
             # Make the request with a timeout to avoid hanging
@@ -937,12 +948,13 @@ class PalaidnValidator(BaseNeuron):
 
             data = response.json()
 
-            return data.get('result', {}).get('transfers', [])
+            # Return the list of transfers (empty list if none found), and no error occurred
+            return data.get('result', {}).get('transfers', []), False
 
         except requests.Timeout:
             bt.logging.error(f"Timeout occurred while fetching transfers for {wallet_address}.")
-            return [False]  # Return an empty list if the request times out
+            return [], True  # Return an empty list and signal that an error occurred
 
         except requests.RequestException as e:
             bt.logging.error(f"Error fetching transfers for {wallet_address}: {e}")
-            return [False]  # Return an empty list in case of any other error
+            return [], True  # Return an empty list and signal that an error occurred

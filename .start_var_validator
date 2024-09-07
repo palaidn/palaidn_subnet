@@ -1,0 +1,10 @@
+NEURON_TYPE=VALIDATOR
+ALCHEMY_API_KEY="w3ubi__8iZzO1H6n0vXYOQlH2WyafUpI"
+PAYPANGEA_API_KEY="90309782-nXVXWXFF-d5dnfehY-dsPiErzN"
+NETWORK="test"
+WALLET_NAME="validatortest"
+WALLET_HOTKEY="default"
+LOGGING_LEVEL="debug"
+DISABLE_AUTO_UPDATE="false"
+INSTANCE_NAME="testvalidator"
+DEFAULT_NEURON_ARGS=" --netuid 203 --subtensor.network test --wallet.name validatortest --wallet.hotkey default --logging.debug"
