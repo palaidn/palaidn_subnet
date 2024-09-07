@@ -173,6 +173,7 @@ class PalaidnMiner(BaseNeuron):
     async def verify(
         self, synapse: PalaidnData
     ) -> None:
+        bt.logging.debug(f"checking nonce: {synapse.dendrite}")
          # Build the keypair from the dendrite_hotkey
         if synapse.dendrite is not None:
             keypair = Keypair(ss58_address=synapse.dendrite.hotkey)
