@@ -79,6 +79,7 @@ def main(miner: PalaidnMiner):
         forward_fn=miner.forward,
         blacklist_fn=miner.blacklist,
         priority_fn=miner.priority,
+        verify_fn=(miner.verify if not miner.config.neuron.disable_verification else None)
     )
     bt.logging.info(f"Attached functions to Axon: {axon}")
 
