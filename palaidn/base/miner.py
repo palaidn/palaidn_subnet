@@ -196,7 +196,7 @@ class PalaidnMiner(BaseNeuron):
                 # a reasonable delta.
                 cur_time = time.time_ns()
                 
-                allowed_delta = min(self.config.neuron.synapse_verify_allowed_delta, self._to_nanoseconds(synapse.timeout or 0))
+                allowed_delta = min(self.neuron_config.neuron.synapse_verify_allowed_delta, self._to_nanoseconds(synapse.timeout or 0))
                 
                 latest_allowed_nonce = synapse.dendrite.nonce + allowed_delta                                
                 
