@@ -77,10 +77,17 @@ async def main(validator: PalaidnValidator):
             all_axons = validator.metagraph.axons
 
             # If there are more axons than scores, append the scores list and add new miners to the database
-            if len(validator.metagraph.uids.tolist()) > len(validator.scores):
+            axon_count = len(validator.metagraph.uids.tolist())
+            score_count = len(validator.scores)
+
+            # If there are more axons than scores, append the scores list and add new miners to the database
+            if axon_count > score_count:
                 bt.logging.info(
                     f"Discovered new Axons, current scores: {validator.scores}"
                 )
+                    # Append 0.0 for each new axon that doesn't yet have a score
+                for _ in range(axon_count - score_count):
+                    validator.scores.append(0.0)
                 
                 bt.logging.info(f"Updated scores, new scores: {validator.scores}")
 
