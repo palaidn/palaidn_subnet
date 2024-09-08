@@ -66,6 +66,8 @@ class PalaidnMiner(BaseNeuron):
 
         bt.logging.info("axon:", bt.axon)
 
+        self.nonces = {}
+
         # Neuron configuration
         self.neuron_config = self.config(
             bt_classes=[bt.subtensor, bt.logging, bt.wallet, bt.axon]
