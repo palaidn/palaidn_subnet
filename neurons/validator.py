@@ -84,7 +84,7 @@ async def main(validator: PalaidnValidator):
                 
                 bt.logging.info(f"Updated scores, new scores: {validator.scores}")
 
-            validator.add_new_miners()
+            # validator.add_new_miners()
 
             # Get list of UIDs to query
             (
