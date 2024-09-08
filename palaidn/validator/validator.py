@@ -487,12 +487,12 @@ class PalaidnValidator(BaseNeuron):
                 if (hotkey not in self.hotkeys) and (i not in uids_with_stake):
                     coldkey = self.metagraph.coldkeys[i]
 
-                    if self.miner_stats.init_miner_row(hotkey, coldkey, i):
-                        bt.logging.info(f"added new miner to the database: {hotkey}")
-                    else:
-                        bt.logging.error(
-                            f"failed to add new miner to the database: {hotkey}"
-                        )
+                    # if self.miner_stats.init_miner_row(hotkey, coldkey, i):
+                    #     bt.logging.info(f"added new miner to the database: {hotkey}")
+                    # else:
+                    #     bt.logging.error(
+                    #         f"failed to add new miner to the database: {hotkey}"
+                    #     )
 
 
     def blacklist_miner(self, hotkey):
