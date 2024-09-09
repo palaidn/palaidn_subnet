@@ -799,6 +799,9 @@ class PalaidnValidator(BaseNeuron):
 
         bt.logging.debug("Miner performance calculated")
         bt.logging.debug(f"Scans {earnings}")
+
+        self.scores = earnings
+
         return earnings
 
     async def set_weights(self):
