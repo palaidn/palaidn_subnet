@@ -36,6 +36,8 @@ async def main(validator: PalaidnValidator):
     validator.serve_axon()
     await validator.initialize_connection()
 
+    validator.check_hotkeys()
+
     while True:
 
         try:
