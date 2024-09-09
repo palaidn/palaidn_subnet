@@ -627,7 +627,7 @@ class PalaidnValidator(BaseNeuron):
                 self.step = state["step"]
                 self.scores = state["scores"]
                 self.hotkeys = state["hotkeys"]
-                self.last_updated_block = state["last_updated_block"]
+                self.last_updated_block = 0
                 # if "blacklisted_miner_hotkeys" in state.keys():
                 #     self.blacklisted_miner_hotkeys = state["blacklisted_miner_hotkeys"]
 
@@ -799,13 +799,16 @@ class PalaidnValidator(BaseNeuron):
 
         bt.logging.debug("Miner performance calculated")
         bt.logging.debug(f"Scans {earnings}")
+
+        self.scores = earnings
+
         return earnings
 
     async def set_weights(self):
         bt.logging.info("Entering set_weights method")
+
         # Calculate miner scores and normalize weights as before
         earnings = self.calculate_miner_scores()
-        
         total_earnings = sum(earnings)
 
         # Normalize the array
@@ -815,6 +818,7 @@ class PalaidnValidator(BaseNeuron):
             weights = earnings  # If total is 0, keep the original earnings
 
         bt.logging.debug(f"earnings: {weights}")
+
         # Check stake
         uid = self.metagraph.hotkeys.index(self.wallet.hotkey.ss58_address)
         stake = float(self.metagraph.S[uid])
@@ -837,28 +841,37 @@ class PalaidnValidator(BaseNeuron):
             if self.subtensor.blocks_since_last_update(self.neuron_config.netuid, self.uid) > self.subtensor.weights_rate_limit(self.neuron_config.netuid):
                 bt.logging.info("Attempting to set weights with 120 second timeout")
                 
-                # Run set_weights in a separate thread using asyncio.to_thread
-                result = await asyncio.wait_for(
-                    asyncio.to_thread(
-                        self.subtensor.set_weights,
-                        netuid=self.neuron_config.netuid,
+                # Define function to set weights on chain
+                def set_weights_palaidn():
+                    result, msg = self.subtensor.set_weights(
                         wallet=self.wallet,
+                        netuid=self.neuron_config.netuid,
                         uids=self.metagraph.uids,
                         weights=weights,
-                        version_key=self.spec_version,
-                        wait_for_inclusion=False,
                         wait_for_finalization=True,
-                        max_retries=3
-                    ),
-                    timeout=120  # 120 second timeout
-                )
+                        wait_for_inclusion=True,
+                        version_key=self.spec_version,
+                    )
+                    return result, msg
 
-                # Process the result
-                if result[0] is True:
-                    bt.logging.debug(f"Set weights result: {result}")
-                    return True
-                else:
-                    bt.logging.warning(f"set_weights failed {result}")
+                # Set the timeout for the operation
+                timeout_seconds = 120
+
+                # Use ThreadPoolExecutor to run set_weights_on_chain in a separate thread
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    future = executor.submit(set_weights_palaidn)
+
+                    try:
+                        # Wait for the result with a timeout
+                        result, msg = future.result(timeout=timeout_seconds)
+
+                        if result is True:
+                            bt.logging.success("set_weights on chain successfully!")
+                            return True
+                        else:
+                            bt.logging.error(f"set_weights failed: {msg}")
+                    except concurrent.futures.TimeoutError:
+                        bt.logging.error(f"set_weights operation timed out after {timeout_seconds} seconds")
 
             else:
                 # If not enough blocks have passed, calculate the blocks to wait
@@ -867,8 +880,6 @@ class PalaidnValidator(BaseNeuron):
                 blocks_to_wait = weights_rate_limit - blocks_since_last_update
                 bt.logging.info(f"Need to wait {blocks_to_wait} more blocks to set weight.")
 
-        except asyncio.TimeoutError:
-            bt.logging.error("Timeout occurred while setting weights (120 seconds elapsed).")
         except Exception as e:
             bt.logging.error(f"Error setting weight: {str(e)}")
 
