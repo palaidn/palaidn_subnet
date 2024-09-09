@@ -39,6 +39,18 @@ async def main(validator: PalaidnValidator):
     while True:
 
         try:
+            try:
+                block = validator.subtensor.block
+                bt.logging.debug(f"block: {block}")
+            except BrokenPipeError as e:
+                bt.logging.error(f"Broken pipe error when retrieving block: {e}")
+
+                validator.subtensor = None
+                validator.subtensor = await validator.initialize_connection()
+                bt.logging.error(f"restarted connection and proceed...")
+            except Exception as e:
+                bt.logging.error(f"Error retrieving block: {e}")
+
             current_time = datetime.now()
             # if current_time - last_api_call >= timedelta(hours=1):
             #     # Update games every hour
@@ -77,10 +89,17 @@ async def main(validator: PalaidnValidator):
             all_axons = validator.metagraph.axons
 
             # If there are more axons than scores, append the scores list and add new miners to the database
-            if len(validator.metagraph.uids.tolist()) > len(validator.scores):
+            axon_count = len(validator.metagraph.uids.tolist())
+            score_count = len(validator.scores)
+
+            # If there are more axons than scores, append the scores list and add new miners to the database
+            if axon_count > score_count:
                 bt.logging.info(
                     f"Discovered new Axons, current scores: {validator.scores}"
                 )
+                    # Append 0.0 for each new axon that doesn't yet have a score
+                for _ in range(axon_count - score_count):
+                    validator.scores.append(0.0)
                 
                 bt.logging.info(f"Updated scores, new scores: {validator.scores}")
 
@@ -166,19 +185,26 @@ async def main(validator: PalaidnValidator):
                     processed_uids=list_of_uids, transactions=responses
                 )
 
-            bt.logging.debug("Getting current block ...")
             current_block = await validator.run_sync_in_async(lambda: validator.subtensor.block)
-            bt.logging.debug(f"Last block that weights were updated: {validator.last_updated_block} | difference: {current_block - validator.last_updated_block}")
+
+            bt.logging.debug(f"Current block {current_block}")
+            blocks_since_last_update = validator.subtensor.blocks_since_last_update(validator.neuron_config.netuid, validator.uid)
+            bt.logging.debug(f"blocks_since_last_update {blocks_since_last_update}")
+            weights_rate_limit = validator.subtensor.weights_rate_limit(validator.neuron_config.netuid)
+            bt.logging.debug(f"weights_rate_limit {weights_rate_limit}")
+            blocks_to_wait = weights_rate_limit - blocks_since_last_update
+            
+            # bt.logging.debug(f"Last block that weights were updated: {validator.last_updated_block} | difference: {300 - current_block + validator.last_updated_block}")
 
             bt.logging.debug(
                 f"Version:{version} *** | "
                 f"Current Step: {validator.step} | "
                 f"Current block: {current_block} | "
-                f"weight_update_in: {current_block - validator.last_updated_block} | "
+                f"weight_update_in: {blocks_to_wait} | "
             )
 
                 
-            if current_block - validator.last_updated_block > 300:
+            if blocks_to_wait < 0 or validator.step % 50 == 0:
                 # Periodically update the weights on the Bittensor blockchain.
                 try:
                     bt.logging.info("Attempting to update weights")
@@ -205,9 +231,8 @@ async def main(validator: PalaidnValidator):
             # End the current step and prepare for the next iteration.
             validator.step += 1
 
-            # Sleep for a duration equivalent to the block time (i.e., time between successive blocks).
-            bt.logging.debug("Sleeping for: 120 seconds")
-            await asyncio.sleep(120)
+            bt.logging.debug("Sleeping for: 30 seconds")
+            await asyncio.sleep(30)
 
 
         except Exception as e:
