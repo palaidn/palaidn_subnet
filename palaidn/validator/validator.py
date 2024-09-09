@@ -82,7 +82,7 @@ class PalaidnValidator(BaseNeuron):
         bt.logging.add_args(parser)
         bt.logging.debug("Parsed arguments2:", args)
 
-        self.timeout = 12
+        self.timeout = 45
         self.neuron_config = None
         self.wallet =  None
         self.subtensor = None
@@ -122,7 +122,7 @@ class PalaidnValidator(BaseNeuron):
         if self.subtensor is None:
             try:
                 self.subtensor = bt.subtensor(config=self.neuron_config)
-                bt.logging.info(f"Connected to {self.neuron_config.subtensor.network} network")
+                # bt.logging.info(f"Connected to {self.neuron_config.subtensor.network} network")
             except Exception as e:
                 bt.logging.error(f"Failed to initialize subtensor: {str(e)}")
                 self.subtensor = None

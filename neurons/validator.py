@@ -6,6 +6,7 @@ import bittensor as bt
 import time
 import os
 import sys
+import random
 import asyncio
 from argparse import ArgumentParser
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -45,11 +46,10 @@ async def main(validator: PalaidnValidator):
                 block = validator.subtensor.block
                 bt.logging.debug(f"block: {block}")
             except BrokenPipeError as e:
-                bt.logging.error(f"Broken pipe error when retrieving block: {e}")
 
                 validator.subtensor = None
                 validator.subtensor = await validator.initialize_connection()
-                bt.logging.error(f"restarted connection and proceed...")
+                bt.logging.debug(f"restarted connection and proceed...")
             except Exception as e:
                 bt.logging.error(f"Error retrieving block: {e}")
 
@@ -233,8 +233,9 @@ async def main(validator: PalaidnValidator):
             # End the current step and prepare for the next iteration.
             validator.step += 1
 
-            bt.logging.debug("Sleeping for: 30 seconds")
-            await asyncio.sleep(30)
+            sleep_duration = random.randint(90, 180)
+            bt.logging.debug(f"Sleeping for: {sleep_duration} seconds")
+            await asyncio.sleep(sleep_duration)
 
 
         except Exception as e:
