@@ -36,6 +36,8 @@ async def main(validator: PalaidnValidator):
     validator.serve_axon()
     await validator.initialize_connection()
 
+    validator.check_hotkeys()
+
     while True:
 
         try:
@@ -58,7 +60,7 @@ async def main(validator: PalaidnValidator):
             #     fraud_data_wallet = await fraud_data.fetch_wallet_data(paypangea_api_key)
             #     last_api_call = current_time
             log = (
-                    f"Version:{version} *** | "
+                    f"Version:{version} ** | "
                     f"Step:{validator.step} | "
                 )
 
@@ -197,7 +199,7 @@ async def main(validator: PalaidnValidator):
             # bt.logging.debug(f"Last block that weights were updated: {validator.last_updated_block} | difference: {300 - current_block + validator.last_updated_block}")
 
             bt.logging.debug(
-                f"Version:{version} *** | "
+                f"Version:{version} ** | "
                 f"Current Step: {validator.step} | "
                 f"Current block: {current_block} | "
                 f"weight_update_in: {blocks_to_wait} | "

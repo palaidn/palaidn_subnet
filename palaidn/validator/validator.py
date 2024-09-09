@@ -325,17 +325,16 @@ class PalaidnValidator(BaseNeuron):
         """connects to the sqlite database"""
         return sqlite3.connect(self.db_path)
         
-    def process_miner_data(
-            self, processed_uids: torch.tensor, transactions: list
-        ) -> list:
-            """
-            Processes responses received by miners.
+    def process_miner_data(self, processed_uids: torch.tensor, transactions: list) -> list:
+        """
+        Processes responses received by miners.
 
-            Args:
-                processed_uids: list of uids that have been processed
-                transactions: list of deserialized synapses
-            """
-
+        Args:
+            processed_uids: list of uids that have been processed
+            transactions: list of deserialized synapses
+        """
+        
+        try:
             transactions_dict = {}
 
             bt.logging.warning(f"Processing data sent from UID {self.uid}.")
@@ -349,133 +348,153 @@ class PalaidnValidator(BaseNeuron):
             total_synapses = len(transactions)  # Total number of synapses
 
             # Define a threshold of 80%
-            threshold = 0.8 
+            threshold = 0.8
+
+            bt.logging.debug(f"self.hotkeys {self.hotkeys}.")
 
             # First pass: count how many miners fetched each transaction
             for synapse in transactions:
-                if synapse.wallet_address:
-                    transaction_data = synapse.transactions_dict
-                    uid = synapse.neuron_uid
+                try:
+                    if synapse.wallet_address:
+                        transaction_data = synapse.transactions_dict
+                        uid = synapse.neuron_uid
 
-                    # Check if miner's hotkey is not blacklisted
-                    if self.hotkeys[uid] not in self.blacklisted_miner_hotkeys:
-                        if transaction_data:
-                            # Count how many miners fetched each transaction
-                            for txn in transaction_data:
-                                txn_id = txn.transaction_hash
-                                if txn_id:
-                                    transaction_counter[txn_id] = transaction_counter.get(txn_id, 0) + 1
+                        # Ensure `uid` is within bounds for `self.hotkeys`
+                        if uid < len(self.hotkeys):
+                            # Check if miner's hotkey is not blacklisted
+                            if self.hotkeys[uid] not in self.blacklisted_miner_hotkeys:
+                                if transaction_data:
+                                    # Count how many miners fetched each transaction
+                                    for txn in transaction_data:
+                                        txn_id = txn.transaction_hash
+                                        if txn_id:
+                                            transaction_counter[txn_id] = transaction_counter.get(txn_id, 0) + 1
+                except Exception as e:
+                    bt.logging.error(f"Error processing synapse in first pass: {e}")
+
+            bt.logging.debug(f"transaction_counter {transaction_counter}.")
 
             # Second pass: filter transactions for further checking
             for synapse in transactions:
-                if synapse.wallet_address:
-                    transaction_data = synapse.transactions_dict
-                    base_address = synapse.wallet_address
-                    uid = synapse.neuron_uid
+                try:
+                    if synapse.wallet_address:
+                        transaction_data = synapse.transactions_dict
+                        base_address = synapse.wallet_address
+                        uid = synapse.neuron_uid
 
-                    # Check if miner's hotkey is not blacklisted
-                    if self.hotkeys[uid] not in self.blacklisted_miner_hotkeys:
-                        if transaction_data:
-                            # Filter transactions that need further checking
-                            filtered_transactions = [
-                                txn for txn in transaction_data
-                                if transaction_counter[txn.transaction_hash] < threshold * total_synapses or total_synapses < 5
-                            ]
+                        # Ensure `uid` is within bounds for `self.hotkeys`
+                        if uid < len(self.hotkeys):
+                            # Check if miner's hotkey is not blacklisted
+                            if self.hotkeys[uid] not in self.blacklisted_miner_hotkeys:
+                                if transaction_data:
+                                    # Filter transactions that need further checking
+                                    filtered_transactions = [
+                                        txn for txn in transaction_data
+                                        if transaction_counter[txn.transaction_hash] < threshold * total_synapses or total_synapses < 5
+                                    ]
 
-                            # Log and store filtered transactions
-                            if filtered_transactions:
-                                bt.logging.debug(
-                                    f"Miner {uid} provided a transaction that needs to be checked."
-                                )
+                                    # Log and store filtered transactions
+                                    if filtered_transactions:
+                                        bt.logging.debug(
+                                            f"Miner {uid} provided a transaction that needs to be checked."
+                                        )
 
-                                if len(transactions_to_check) < 5000:
-                                    transactions_to_check.append({
-                                        "uid": uid,
-                                        "hotkey": self.hotkeys[uid],
-                                        "base_address": base_address,
-                                        "filtered_transactions": filtered_transactions
-                                    })
-                                else:
-                                    bt.logging.warning(f"Skipping further transactions as transactions_to_check has reached its limit of 5000.")
+                                        if len(transactions_to_check) < 5000:
+                                            transactions_to_check.append({
+                                                "uid": uid,
+                                                "hotkey": self.hotkeys[uid],
+                                                "base_address": base_address,
+                                                "filtered_transactions": filtered_transactions
+                                            })
+                                        else:
+                                            bt.logging.warning(f"Skipping further transactions as transactions_to_check has reached its limit of 5000.")
+                                    else:
+                                        bt.logging.debug(f"All transactions from miner {uid} were fetched by >= 80% of miners, skipping.")
+                except Exception as e:
+                    bt.logging.error(f"Error processing synapse in second pass: {e}")
 
-                            else:
-                                bt.logging.debug(f"All transactions from miner {uid} were fetched by >= 80% of miners, skipping.")
-                else:
-                    bt.logging.warning("Synapse data is incomplete or not in the expected format.")
-
+            bt.logging.debug(f"transactions_to_check {transactions_to_check}.")
 
             # Process the transactions_to_check array
             for txn_info in transactions_to_check:
-                uid = txn_info["uid"]
-                hotkey = txn_info["hotkey"]
-                base_address = txn_info["base_address"]
-                filtered_transactions = txn_info["filtered_transactions"]
+                try:
+                    uid = txn_info["uid"]
+                    hotkey = txn_info["hotkey"]
+                    base_address = txn_info["base_address"]
+                    filtered_transactions = txn_info["filtered_transactions"]
 
-                # Process each filtered transaction
-                for txn in filtered_transactions:
-                    transaction_hash = txn.transaction_hash
+                    # Process each filtered transaction
+                    for txn in filtered_transactions:
+                        transaction_hash = txn.transaction_hash
 
-                    # Only perform the blockchain check and blacklisting if the UID is not blacklisted
-                    if hotkey not in self.blacklisted_miner_hotkeys:
-                        if transaction_hash:
-                            # Check if the category is "erc20"
-                            if txn.category == "erc20":
-                                # Call existing function for ERC20
-                                existsAndValid = self.check_alchemy_transaction(transaction_hash, base_address, txn.sender)
-                            else:
-                                # For any other category, use the new method with alchemy_transactions
-                                existsAndValid = self.check_alchemy_transaction(transaction_hash, base_address, txn.sender)
-
-                            # First value: whether the transaction exists and is valid
-                            # Second value: whether an error occurred
-                            if existsAndValid[0]:  # Transaction exists and is valid
-                                bt.logging.debug(f"Transaction {transaction_hash} exists on the blockchain and is valid.")
-                            else:
-                                # Handle the error case if there was one
-                                if existsAndValid[1]:  # An error occurred
-                                    bt.logging.error(f"Error occurred while checking transaction {transaction_hash} for miner {uid}.")
+                        # Only perform the blockchain check and blacklisting if the UID is not blacklisted
+                        if hotkey not in self.blacklisted_miner_hotkeys:
+                            if transaction_hash:
+                                # Check if the category is "erc20"
+                                if txn.category == "erc20":
+                                    # Call existing function for ERC20
+                                    existsAndValid = self.check_alchemy_transaction(transaction_hash, base_address, txn.sender)
                                 else:
-                                    # Transaction does not exist or is invalid, no error during the check
-                                    bt.logging.warning(f"Transaction {transaction_hash} does not exist on the blockchain, miner {uid} made it up.")
-                                    # Blacklist the miner who made up the transaction
-                                    self.blacklist_miner(hotkey)
+                                    # For any other category, use the new method with alchemy_transactions
+                                    existsAndValid = self.check_alchemy_transaction(transaction_hash, base_address, txn.sender)
 
-                    # else:
-                    #     bt.logging.debug(f"Skipping blockchain check for blacklisted UID {uid}.")
+                                # First value: whether the transaction exists and is valid
+                                # Second value: whether an error occurred
+                                if existsAndValid[0]:  # Transaction exists and is valid
+                                    bt.logging.debug(f"Transaction {transaction_hash} exists on the blockchain and is valid.")
+                                else:
+                                    # Handle the error case if there was one
+                                    if existsAndValid[1]:  # An error occurred
+                                        bt.logging.error(f"Error occurred while checking transaction {transaction_hash} for miner {uid}.")
+                                    else:
+                                        # Transaction does not exist or is invalid, no error during the check
+                                        bt.logging.warning(f"Transaction {transaction_hash} does not exist on the blockchain, miner {uid} made it up.")
+                                        # Blacklist the miner who made up the transaction
+                                        self.blacklist_miner(hotkey)
+                except Exception as e:
+                    bt.logging.error(f"Error processing transaction check: {e}")
 
             # Iterate over synapse transactions and save to DB if valid
             for synapse in transactions:
-                # Ensure synapse has expected elements
-                if synapse.wallet_address:
-                    transaction_data = synapse.transactions_dict
-                    uid = synapse.neuron_uid
+                try:
+                    # Ensure synapse has expected elements
+                    if synapse.wallet_address:
+                        transaction_data = synapse.transactions_dict
+                        uid = synapse.neuron_uid
 
-                    if self.hotkeys[uid] not in self.blacklisted_miner_hotkeys:
-                        if uid == self.uid:
-                            bt.logging.debug(f"{uid} is offline or is not a miner")
-                        else:
-                            # Ensure transaction_data is not None and not empty before processing
-                            if transaction_data is not None and transaction_data != []:
-                                transaction_count = len(transaction_data)
-
-                                if transaction_count < 300:
-                                    bt.logging.debug(
-                                        f"Miner {uid} fetched {transaction_count} transactions and they will be saved."
-                                    )
-
-                                    # Insert all transactions into the database
-                                    self.fraud_data.insert_into_database(base_address, transaction_data, self.metagraph.hotkeys)
+                        # Ensure `uid` is within bounds for `self.hotkeys`
+                        if uid < len(self.hotkeys):
+                            if self.hotkeys[uid] not in self.blacklisted_miner_hotkeys:
+                                if uid == self.uid:
+                                    bt.logging.debug(f"{uid} is offline or is not a miner")
                                 else:
-                                    bt.logging.warning(
-                                        f"Miner {uid} fetched {transaction_count} transactions, which exceeds the 300 limit. Skipping insertion."
-                                    )
-                            else:
-                                bt.logging.debug(f"UID {uid} responded, but did not fetch any transactions and will be skipped.")
+                                    # Ensure transaction_data is not None and not empty before processing
+                                    if transaction_data is not None and transaction_data != []:
+                                        transaction_count = len(transaction_data)
 
+                                        if transaction_count < 300:
+                                            bt.logging.debug(
+                                                f"Miner {uid} fetched {transaction_count} transactions and they will be saved."
+                                            )
+
+                                            # Insert all transactions into the database
+                                            self.fraud_data.insert_into_database(base_address, transaction_data, self.metagraph.hotkeys)
+                                        else:
+                                            bt.logging.warning(
+                                                f"Miner {uid} fetched {transaction_count} transactions, which exceeds the 300 limit. Skipping insertion."
+                                            )
+                                    else:
+                                        bt.logging.debug(f"UID {uid} responded, but did not fetch any transactions and will be skipped.")
+                            else:
+                                bt.logging.warning("Miner was blacklisted, I do not care what he sends :)")
                     else:
-                        bt.logging.warning("Miner was blacklisted, I do not care what he sends :)")
-                else:
-                    bt.logging.warning("Synapse data is incomplete or not in the expected format.")
+                        bt.logging.warning("Synapse data is incomplete or not in the expected format.")
+                except Exception as e:
+                    bt.logging.error(f"Error processing and saving synapse data: {e}")
+                    
+        except Exception as e:
+            bt.logging.error(f"Error in process_miner_data: {e}")
+
 
     def add_new_miners(self):
         """
