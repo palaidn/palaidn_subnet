@@ -14,8 +14,6 @@ Cryptocurrency transactions are particularly vulnerable, with frequent hacking a
 
 Palaidn emerges as a revolutionary solution, utilizing blockchain technology to create a decentralized and incentivized fraud detection environment for crypto transactions. By distributing control and data across a decentralized network, Palaidn enhances transparency and trust, making fraud detection more efficient and cost-effective.
 
-In addition to transaction monitoring, Palaidn leverages AI to scan for vulnerabilities in code dependencies. This proactive approach addresses potential security risks before they can be exploited, further enhancing the security of the cryptocurrency ecosystem. By incentivizing participants with TAO tokens, Palaidn ensures robust and continuous fraud detection and vulnerability scanning, democratizing access to these critical security measures.
-
 :link:**Useful Links:** <br>
 
 - [webpage](https://www.palaidn.com) <br>
@@ -64,12 +62,6 @@ The incentive mechanism encourages miners to accurately identify fraudulent acti
 :star:**Competition** <br>
 Miners are motivated to outperform each other in identifying genuine frauds, ensuring high-quality detection and reporting.
 
-# Income Sources for Validators
-:white_check_mark:**Validators can monetize their participation in Palaidn.com Subnet through various avenues, including:** <br>
-- offering fraud detection services <br>
-- developing applications using the Palaidn.com API <br>
-- providing paid API access to others
-
 # Roadmap
 
 **September 2024**
@@ -92,7 +84,7 @@ Miners are motivated to outperform each other in identifying genuine frauds, ens
 1. Create a Bittensor wallet (coldkey & hotkey).
 2. Register your hotkey to Subnet 14.
 3. Create a PayPangea account [PayPangea.com](https://paypangea.com) and get API key. Paypangea is a free decentralised wallet that we use for web3 authentication. You will find your API key under Profile settings on the top right corner.
-3. Create a Alchemy account [Alchmemy.com](https://www.alchemy.com/) and get API key.
+3. Create a Alchemy account [Alchmemy.com](https://www.alchemy.com/) and get API key. More info here: [Alchemy instructions](docs/alchemy-setup.md)
 5. Hardware requirements:
 - VPS with Ubuntu v.22 or higher
 - Python v3.12 or higher

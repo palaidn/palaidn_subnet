@@ -169,3 +169,5 @@ data/miner_env.txt
 
 .start_var_miner
 .start_var_validator
+
+config/miner.json
