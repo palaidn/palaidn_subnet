@@ -78,7 +78,7 @@ async def main(validator: PalaidnValidator):
                 # Reset and get new wallet to scan
                 validator.alchemy_transactions = None
                 fraud_data_wallet = await fraud_data.fetch_wallet_data(paypangea_api_key)
-                validator.alchemy_transactions = await validator.get_erc20_transfers(fraud_data_wallet)
+                validator.alchemy_transactions, _ = await validator.get_erc20_transfers(fraud_data_wallet)
 
                 bt.logging.debug(f"validator.alchemy_transactions: {validator.alchemy_transactions}")
 

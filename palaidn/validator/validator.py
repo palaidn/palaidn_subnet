@@ -411,7 +411,7 @@ class PalaidnValidator(BaseNeuron):
                 except Exception as e:
                     bt.logging.error(f"Error processing synapse in second pass: {e}")
 
-            bt.logging.debug(f"transactions_to_check {transactions_to_check}.")
+            # bt.logging.debug(f"transactions_to_check {transactions_to_check}.")
 
             for txn_info in transactions_to_check:
                 try:
@@ -428,7 +428,6 @@ class PalaidnValidator(BaseNeuron):
                                 transaction_hash = txn.transaction_hash
                                 category = txn.category
                                 sender = txn.sender
-
                                 # Ensure all attributes are present
                                 if not transaction_hash or not category or not sender:
                                     bt.logging.error(f"Missing data in transaction for miner {uid}. Skipping.")
@@ -985,8 +984,10 @@ class PalaidnValidator(BaseNeuron):
         """
         
         # Search for the transaction in the alchemy_transactions list
+        bt.logging.debug(f"alchemy_transactions {self.alchemy_transactions}.")
         for txn in self.alchemy_transactions:
-            if txn['hash'] == transaction_hash:
+            bt.logging.debug(f"alchemy_transactions {txn}.")
+            if txn["hash"] == transaction_hash:
                 bt.logging.debug(f"Transaction {transaction_hash} found in alchemy transactions.")
                 return [True, False]  # Transaction exists, no error
 
