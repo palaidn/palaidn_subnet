@@ -423,18 +423,20 @@ class PalaidnValidator(BaseNeuron):
 
                     # Process each filtered transaction
                     for txn in filtered_transactions:
-                        transaction_hash = txn.transaction_hash
+                        transaction_hash = txn["transaction_hash"]
+                        category = txn["category"]
+                        sender = txn["sender"]
 
                         # Only perform the blockchain check and blacklisting if the UID is not blacklisted
                         if hotkey not in self.blacklisted_miner_hotkeys:
                             if transaction_hash:
                                 # Check if the category is "erc20"
-                                if txn.category == "erc20":
+                                if category == "erc20":
                                     # Call existing function for ERC20
-                                    existsAndValid = self.check_alchemy_transaction(transaction_hash, base_address, txn.sender)
+                                    existsAndValid = self.check_alchemy_transaction(transaction_hash, base_address, sender)
                                 else:
                                     # For any other category, use the new method with alchemy_transactions
-                                    existsAndValid = self.check_alchemy_transaction(transaction_hash, base_address, txn.sender)
+                                    existsAndValid = self.check_alchemy_transaction(transaction_hash, base_address, sender)
 
                                 # First value: whether the transaction exists and is valid
                                 # Second value: whether an error occurred
