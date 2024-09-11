@@ -73,6 +73,7 @@ def main(miner: PalaidnMiner):
     bt.logging.info(f"Linked miner to Axon: {axon}")
 
     miner.alchemy_api_key = alchemy_api_key
+    miner.config_file = os.path.join('config', 'miner.json')
 
     # Attach the miner functions to the Axon
     axon.attach(
@@ -99,6 +100,8 @@ def main(miner: PalaidnMiner):
     bt.logging.info(
         "Miner has been initialized and we are connected to the network. Start main loop."
     )
+
+    miner.metagraph.sync(subtensor=miner.subtensor)
 
     # When we init, set last_updated_block to current_block
     miner.last_updated_block = miner.subtensor.block
