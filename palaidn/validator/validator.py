@@ -413,7 +413,6 @@ class PalaidnValidator(BaseNeuron):
 
             bt.logging.debug(f"transactions_to_check {transactions_to_check}.")
 
-            # Process the transactions_to_check array
             for txn_info in transactions_to_check:
                 try:
                     uid = txn_info["uid"]
@@ -422,37 +421,48 @@ class PalaidnValidator(BaseNeuron):
                     filtered_transactions = txn_info["filtered_transactions"]
 
                     # Process each filtered transaction
-                    for txn in filtered_transactions:
-                        transaction_hash = txn["transaction_hash"]
-                        category = txn["category"]
-                        sender = txn["sender"]
+                    for txn in filtered_transactions:  # txn is an instance of ScanWalletTransactions
+                        try:
+                            # Safely access transaction attributes
+                            transaction_hash = txn.transaction_hash
+                            category = txn.category
+                            sender = txn.sender
 
-                        # Only perform the blockchain check and blacklisting if the UID is not blacklisted
-                        if hotkey not in self.blacklisted_miner_hotkeys:
-                            if transaction_hash:
-                                # Check if the category is "erc20"
-                                if category == "erc20":
-                                    # Call existing function for ERC20
-                                    existsAndValid = self.check_alchemy_transaction(transaction_hash, base_address, sender)
-                                else:
-                                    # For any other category, use the new method with alchemy_transactions
-                                    existsAndValid = self.check_alchemy_transaction(transaction_hash, base_address, sender)
+                            # Ensure all attributes are present
+                            if not transaction_hash or not category or not sender:
+                                bt.logging.error(f"Missing data in transaction for miner {uid}. Skipping.")
+                                continue
 
-                                # First value: whether the transaction exists and is valid
-                                # Second value: whether an error occurred
-                                if existsAndValid[0]:  # Transaction exists and is valid
-                                    bt.logging.debug(f"Transaction {transaction_hash} exists on the blockchain and is valid.")
-                                else:
-                                    # Handle the error case if there was one
-                                    if existsAndValid[1]:  # An error occurred
-                                        bt.logging.error(f"Error occurred while checking transaction {transaction_hash} for miner {uid}.")
+                            # Only perform the blockchain check and blacklisting if the UID is not blacklisted
+                            if hotkey not in self.blacklisted_miner_hotkeys:
+                                if transaction_hash:
+                                    # Check if the category is "erc20"
+                                    if category == "erc20":
+                                        # Call existing function for ERC20
+                                        existsAndValid = self.check_alchemy_transaction(transaction_hash, base_address, sender)
                                     else:
-                                        # Transaction does not exist or is invalid, no error during the check
-                                        bt.logging.warning(f"Transaction {transaction_hash} does not exist on the blockchain, miner {uid} made it up.")
-                                        # Blacklist the miner who made up the transaction
-                                        self.blacklist_miner(hotkey)
+                                        # For any other category, use the new method with alchemy_transactions
+                                        existsAndValid = self.check_alchemy_transaction(transaction_hash, base_address, sender)
+
+                                    # First value: whether the transaction exists and is valid
+                                    # Second value: whether an error occurred
+                                    if existsAndValid[0]:  # Transaction exists and is valid
+                                        bt.logging.debug(f"Transaction {transaction_hash} exists on the blockchain and is valid.")
+                                    else:
+                                        # Handle the error case if there was one
+                                        if existsAndValid[1]:  # An error occurred
+                                            bt.logging.error(f"Error occurred while checking transaction {transaction_hash} for miner {uid}.")
+                                        else:
+                                            # Transaction does not exist or is invalid, no error during the check
+                                            bt.logging.warning(f"Transaction {transaction_hash} does not exist on the blockchain, miner {uid} made it up.")
+                                            # Blacklist the miner who made up the transaction
+                                            self.blacklist_miner(hotkey)
+                        except AttributeError as e:
+                            bt.logging.error(f"Error accessing transaction attributes for miner {uid}: {e}")
+                            continue  # Skip the transaction if there's an error
                 except Exception as e:
                     bt.logging.error(f"Error processing transaction check: {e}")
+
 
             # Iterate over synapse transactions and save to DB if valid
             for synapse in transactions:
