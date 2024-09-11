@@ -2,7 +2,7 @@
 
 1. **Obtain API key(s) from Alchemy**:
 
-Setting up your Alchemy API key is essential for the validation of transactions received from miners. For detailed instructions, visit the [Alchemy instructions](docs/alchemy-setup.md)
+Setting up your Alchemy API key is essential for the validation of transactions received from miners. For detailed instructions, visit the [Alchemy instructions](alchemy-setup.md)
 
 2. **Obtain your PayPangea API key**:
 

@@ -2,7 +2,7 @@
 
 1. **Obtain API key(s) from Alchemy**:
 
-Setting up your Alchemy API key is essential for the validation of transactions received from miners. For detailed instructions, visit the [Alchemy instructions](docs/alchemy-setup.md)
+Setting up your Alchemy API key is essential for the validation of transactions received from miners. For detailed instructions, visit the [Alchemy instructions](alchemy-setup.md)
 
 2. **Obtain your PayPangea API key**:
 
@@ -10,7 +10,7 @@ Paypangea is a free decentralised wallet that we use for web3 authentication. Yo
 
 3. **Set up your miner**:
 
-Follow the instructions in the [mining-instructions.md](docs/mining-instructions.md) to configure your miner after obtaining the API keys.
+Follow the instructions in the [mining-instructions.md](mining-instructions.md) to configure your miner after obtaining the API keys.
 
 4. **Run the miner setup**:
 
