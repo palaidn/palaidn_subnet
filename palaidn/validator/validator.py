@@ -984,9 +984,9 @@ class PalaidnValidator(BaseNeuron):
         """
         
         # Search for the transaction in the alchemy_transactions list
-        bt.logging.debug(f"alchemy_transactions {self.alchemy_transactions}.")
+        # bt.logging.debug(f"alchemy_transactions {self.alchemy_transactions}.")
         for txn in self.alchemy_transactions:
-            bt.logging.debug(f"alchemy_transactions {txn}.")
+            # bt.logging.debug(f"alchemy_transactions {txn}.")
             if txn["hash"] == transaction_hash:
                 bt.logging.debug(f"Transaction {transaction_hash} found in alchemy transactions.")
                 return [True, False]  # Transaction exists, no error
