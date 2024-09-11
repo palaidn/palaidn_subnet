@@ -31,13 +31,17 @@ async def main(validator: PalaidnValidator):
 
     fraud_data = FraudData()
 
-    fraud_data_wallet =  await fraud_data.fetch_wallet_data(paypangea_api_key)
+    validator_rank = await validator.get_validators_ranked_by_stake()
+    validator.target_group = validator_rank
+
     last_api_call = datetime.now()
 
     validator.serve_axon()
     await validator.initialize_connection()
 
     validator.check_hotkeys()
+
+    validator.metagraph = await validator.sync_metagraph()
 
     while True:
 
@@ -53,24 +57,31 @@ async def main(validator: PalaidnValidator):
             except Exception as e:
                 bt.logging.error(f"Error retrieving block: {e}")
 
-            current_time = datetime.now()
-            # if current_time - last_api_call >= timedelta(hours=1):
-            #     # Update games every hour
-
-            #     fraud_data_wallet = await fraud_data.fetch_wallet_data(paypangea_api_key)
-            #     last_api_call = current_time
             log = (
                     f"Version:{version} ** | "
                     f"Step:{validator.step} | "
                 )
 
+            if validator.step % 600 == 0:
+                bt.logging.debug(
+                    f"Syncing rank of validator"
+                )
+
+                validator_rank = await validator.get_validators_ranked_by_stake()
+                validator.target_group = validator_rank
+
             bt.logging.info(log)
             bt.logging.info(f"Validator UID: {validator.uid}")
+            bt.logging.info(f"Round: {validator.target_group}")
 
-            
-            fraud_data_wallet = await fraud_data.fetch_wallet_data(paypangea_api_key)
+            if validator.target_group == validator_rank:
+                # Reset and get new wallet to scan
+                validator.alchemy_transactions = None
+                fraud_data_wallet = await fraud_data.fetch_wallet_data(paypangea_api_key)
+                validator.alchemy_transactions, _ = await validator.get_erc20_transfers(fraud_data_wallet)
 
-            validator.alchemy_transactions = None
+                bt.logging.debug(f"validator.alchemy_transactions: {validator.alchemy_transactions}")
+
 
             # Periodically sync subtensor status and save the state file
             if validator.step % 5 == 0:
@@ -233,7 +244,8 @@ async def main(validator: PalaidnValidator):
             # End the current step and prepare for the next iteration.
             validator.step += 1
 
-            sleep_duration = random.randint(90, 180)
+            # sleep_duration = random.randint(90, 180)
+            sleep_duration = 60
             bt.logging.debug(f"Sleeping for: {sleep_duration} seconds")
             await asyncio.sleep(sleep_duration)
 
@@ -277,7 +289,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--max_targets",
         type=int,
-        default=256,
+        default=32,
         help="Sets the value for the number of targets to query at once",
     )
     parser.add_argument(

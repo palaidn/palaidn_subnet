@@ -82,7 +82,7 @@ class PalaidnValidator(BaseNeuron):
         bt.logging.add_args(parser)
         bt.logging.debug("Parsed arguments2:", args)
 
-        self.timeout = 45
+        self.timeout = 12
         self.neuron_config = None
         self.wallet =  None
         self.subtensor = None
@@ -350,8 +350,6 @@ class PalaidnValidator(BaseNeuron):
             # Define a threshold of 80%
             threshold = 0.8
 
-            bt.logging.debug(f"self.hotkeys {self.hotkeys}.")
-
             # First pass: count how many miners fetched each transaction
             for synapse in transactions:
                 try:
@@ -413,46 +411,60 @@ class PalaidnValidator(BaseNeuron):
                 except Exception as e:
                     bt.logging.error(f"Error processing synapse in second pass: {e}")
 
-            bt.logging.debug(f"transactions_to_check {transactions_to_check}.")
+            # bt.logging.debug(f"transactions_to_check {transactions_to_check}.")
 
-            # Process the transactions_to_check array
             for txn_info in transactions_to_check:
                 try:
-                    uid = txn_info["uid"]
-                    hotkey = txn_info["hotkey"]
-                    base_address = txn_info["base_address"]
-                    filtered_transactions = txn_info["filtered_transactions"]
+                    if (isinstance(txn_info, dict)):
+                        uid = txn_info["uid"]
+                        hotkey = txn_info["hotkey"]
+                        base_address = txn_info["base_address"]
+                        filtered_transactions = txn_info["filtered_transactions"]
 
-                    # Process each filtered transaction
-                    for txn in filtered_transactions:
-                        transaction_hash = txn.transaction_hash
+                        # Process each filtered transaction
+                        for txn in filtered_transactions:  # txn is an instance of ScanWalletTransactions
+                            try:
+                                # Safely access transaction attributes
+                                transaction_hash = txn.transaction_hash
+                                category = txn.category
+                                sender = txn.sender
+                                # Ensure all attributes are present
+                                if not transaction_hash or not category or not sender:
+                                    bt.logging.error(f"Missing data in transaction for miner {uid}. Skipping.")
+                                    continue
 
-                        # Only perform the blockchain check and blacklisting if the UID is not blacklisted
-                        if hotkey not in self.blacklisted_miner_hotkeys:
-                            if transaction_hash:
-                                # Check if the category is "erc20"
-                                if txn.category == "erc20":
-                                    # Call existing function for ERC20
-                                    existsAndValid = self.check_alchemy_transaction(transaction_hash, base_address, txn.sender)
-                                else:
-                                    # For any other category, use the new method with alchemy_transactions
-                                    existsAndValid = self.check_alchemy_transaction(transaction_hash, base_address, txn.sender)
+                                # Only perform the blockchain check and blacklisting if the UID is not blacklisted
+                                if hotkey not in self.blacklisted_miner_hotkeys:
+                                    if transaction_hash:
+                                        # Check if the category is "erc20"
+                                        if category == "erc20":
+                                            # Call existing function for ERC20
+                                            existsAndValid = self.check_alchemy_transaction(transaction_hash, base_address, sender)
+                                        else:
+                                            # For any other category, use the new method with alchemy_transactions
+                                            existsAndValid = self.check_alchemy_transaction(transaction_hash, base_address, sender)
 
-                                # First value: whether the transaction exists and is valid
-                                # Second value: whether an error occurred
-                                if existsAndValid[0]:  # Transaction exists and is valid
-                                    bt.logging.debug(f"Transaction {transaction_hash} exists on the blockchain and is valid.")
-                                else:
-                                    # Handle the error case if there was one
-                                    if existsAndValid[1]:  # An error occurred
-                                        bt.logging.error(f"Error occurred while checking transaction {transaction_hash} for miner {uid}.")
-                                    else:
-                                        # Transaction does not exist or is invalid, no error during the check
-                                        bt.logging.warning(f"Transaction {transaction_hash} does not exist on the blockchain, miner {uid} made it up.")
-                                        # Blacklist the miner who made up the transaction
-                                        self.blacklist_miner(hotkey)
+                                        # First value: whether the transaction exists and is valid
+                                        # Second value: whether an error occurred
+                                        if existsAndValid[0]:  # Transaction exists and is valid
+                                            bt.logging.debug(f"Transaction {transaction_hash} exists on the blockchain and is valid.")
+                                        else:
+                                            # Handle the error case if there was one
+                                            if existsAndValid[1]:  # An error occurred
+                                                bt.logging.error(f"Error occurred while checking transaction {transaction_hash} for miner {uid}.")
+                                            else:
+                                                # Transaction does not exist or is invalid, no error during the check
+                                                bt.logging.warning(f"Transaction {transaction_hash} does not exist on the blockchain, miner {uid} made it up.")
+                                                # Blacklist the miner who made up the transaction
+                                                self.blacklist_miner(hotkey)
+                            except AttributeError as e:
+                                bt.logging.error(f"Error accessing transaction attributes for miner {uid}: {e}")
+                                continue  # Skip the transaction if there's an error
+                    else:
+                        bt.logging.debug(f"Excpected dict but got {type(txn_info)}")
                 except Exception as e:
                     bt.logging.error(f"Error processing transaction check: {e}")
+
 
             # Iterate over synapse transactions and save to DB if valid
             for synapse in transactions:
@@ -495,7 +507,6 @@ class PalaidnValidator(BaseNeuron):
         except Exception as e:
             bt.logging.error(f"Error in process_miner_data: {e}")
 
-
     def add_new_miners(self):
         """
         adds new miners to the database, if there are new hotkeys in the metagraph
@@ -513,7 +524,6 @@ class PalaidnValidator(BaseNeuron):
                     #         f"failed to add new miner to the database: {hotkey}"
                     #     )
 
-
     def blacklist_miner(self, hotkey):
         """Add the miner  to the blacklist."""
 
@@ -527,7 +537,6 @@ class PalaidnValidator(BaseNeuron):
 
             self.save_state()
             bt.logging.info(f"Miner {hotkey} has been blacklisted.")
-
 
     def check_hotkeys(self):
         """Checks if some hotkeys have been replaced or removed in the metagraph and adjusts scores accordingly."""
@@ -628,7 +637,7 @@ class PalaidnValidator(BaseNeuron):
         )
 
         self.init_default_scores()
-        self.step = 0
+        self.step = 1
         self.last_updated_block = 0
         self.hotkeys = None
         self.blacklisted_miner_hotkeys = None
@@ -659,6 +668,68 @@ class PalaidnValidator(BaseNeuron):
 
         else:
             self.init_default_scores()
+
+    async def get_validators_ranked_by_stake(self):
+        """
+        Fetch, sort validators by their stake, and return the rank of self.uid.
+
+        Returns:
+            int: The rank of self.uid in the list of validators sorted by stake, or 0 if the rank is out of bounds.
+        """
+        try:
+            # List of validators who have set weights
+            validators_set_weights = []
+
+            # Current block number
+            current_block = self.subtensor.block
+
+            bt.logging.debug(f"Determining rank of your validator, please wait, this might take a few minutes")
+
+            # Iterate through all validators (hotkeys)
+            for uid, hotkey in enumerate(self.metagraph.hotkeys):
+                # Get the last block where this validator updated weights
+                last_weight_update = self.subtensor.blocks_since_last_update(self.neuron_config.netuid, uid)
+                blocks_ago = current_block - last_weight_update
+
+                bt.logging.debug(f"Scanning uid {uid}.")
+
+                # Check if the last update was within the last 7,200 blocks
+                if last_weight_update < 7200:
+                    validators_set_weights.append((uid, hotkey, last_weight_update, blocks_ago, self.metagraph.S[uid]))
+
+            # Output results
+            if validators_set_weights:
+                # Sort by stake (fifth element in the tuple is stake)
+                validators_set_weights.sort(key=lambda x: x[4], reverse=True)
+
+                # Find the position of self.uid in the sorted list
+                for rank, validator in enumerate(validators_set_weights, 1):  # Starting rank from 1
+                    uid, hotkey, last_weight_update, blocks_ago, stake = validator
+
+                    if uid == self.uid:
+                        bt.logging.debug(f"Your UID ({self.uid}) is {rank} among validators that set weights.")
+
+                        # Calculate the start_idx based on rank
+                        start_idx = self.max_targets * rank
+
+                        # If start_idx is greater than the number of hotkeys in the metagraph, return 0
+                        if start_idx >= len(self.metagraph.hotkeys):
+                            bt.logging.debug(f"start_idx ({start_idx}) exceeds the number of hotkeys in the metagraph ({len(self.metagraph.hotkeys)}). Returning 0.")
+                            return 0
+
+                        return rank
+
+                bt.logging.debug(f"Your UID ({self.uid}) was not found in the list of validators that set weights.")
+                return 0  # Return 0 if self.uid is not in the list
+            else:
+                bt.logging.trace(f"No validators found who set weights.")
+                return 0
+
+        except Exception as e:
+            bt.logging.error(f"Error fetching validators: {e}")
+            return 0
+
+
 
     def get_uids_to_query(self, all_axons) -> list:
         """returns the list of uids to query"""
@@ -911,27 +982,12 @@ class PalaidnValidator(BaseNeuron):
         Checks if a non-ERC20 transaction exists in alchemy_transactions. 
         If alchemy_transactions is empty, fetch new transactions from Alchemy.
         """
-        if not self.alchemy_transactions:
-            try:
-                # Reset alchemy_transactions and populate it with the latest transfers with a timeout
-                self.alchemy_transactions, error_occurred = self.get_erc20_transfers(base_address, timeout=10)  # Set a 10-second timeout
-
-                bt.logging.debug(f"alchemy_transactions: {self.alchemy_transactions}")
-
-                if error_occurred:
-                    bt.logging.error(f"Error occurred while fetching ERC20 transfers for {base_address}.")
-                    return [False, True]  # Error occurred
-
-            except requests.Timeout:
-                bt.logging.error(f"Timeout occurred while fetching ERC20 transfers for {base_address}.")
-                return [False, True]  # Error occurred
-            except requests.RequestException as e:
-                bt.logging.error(f"Error fetching ERC20 transfers for {base_address}: {e}")
-                return [False, True]  # General error occurred
         
         # Search for the transaction in the alchemy_transactions list
+        # bt.logging.debug(f"alchemy_transactions {self.alchemy_transactions}.")
         for txn in self.alchemy_transactions:
-            if txn['hash'] == transaction_hash:
+            # bt.logging.debug(f"alchemy_transactions {txn}.")
+            if txn["hash"] == transaction_hash:
                 bt.logging.debug(f"Transaction {transaction_hash} found in alchemy transactions.")
                 return [True, False]  # Transaction exists, no error
 
@@ -939,22 +995,37 @@ class PalaidnValidator(BaseNeuron):
         bt.logging.debug(f"Transaction {transaction_hash} not found in alchemy transactions.")
         return [False, False]  # Transaction does not exist, no error
     
-    def get_erc20_transfers(self, wallet_address: str, timeout: int = 10) -> (List[Dict[str, Any]], bool):
+    async def get_erc20_transfers(self, wallet_address: str, timeout: int = 10, retries: int = 3, retry_delay: int = 1) -> Tuple[List[Dict[str, Any]], bool]:
         """
-        Retrieves ERC20, ERC721, and ERC1155 transfers for a wallet address from Alchemy.
-        Includes a timeout to prevent hanging.
-        
+        Retrieves ERC20, ERC721, ERC1155, external, and specialnft transfers for a wallet address from Alchemy.
+        Includes a timeout to prevent hanging, and fetches from multiple blockchains (Ethereum and Polygon).
+        Implements retries in case of an error, and delays between chain queries.
+
+        Args:
+            wallet_address (str): The wallet address to fetch transfers for.
+            timeout (int): Timeout in seconds for the API call.
+            retries (int): Number of retry attempts in case of failure.
+            retry_delay (int): Delay in seconds between retries.
+
         Returns:
-            (transactions, error_occurred):
-            - transactions: List of transfers (can be empty if no transactions are found).
-            - error_occurred: Boolean indicating whether an error occurred.
+            Tuple:
+                - List of transfers (can be empty if no transactions are found).
+                - Boolean indicating whether an error occurred.
         """
-        url = f"https://eth-mainnet.g.alchemy.com/v2/{self.alchemy_api_key}"
+        # Base URLs for Ethereum and Polygon blockchains
+        alchemy_urls = {
+            "ethereum": f"https://eth-mainnet.g.alchemy.com/v2/{self.alchemy_api_key}",
+            "polygon": f"https://polygon-mainnet.g.alchemy.com/v2/{self.alchemy_api_key}"
+        }
 
         headers = {
             'Content-Type': 'application/json'
         }
 
+        # Categories we want to query: external, erc20, erc721, erc1155, and specialnft
+        categories = ["external", "erc20", "erc721", "erc1155", "specialnft"]
+
+        # Prepare the payload for the request
         payload = {
             "jsonrpc": "2.0",
             "method": "alchemy_getAssetTransfers",
@@ -962,29 +1033,55 @@ class PalaidnValidator(BaseNeuron):
                 "fromBlock": "0x0",
                 "toBlock": "latest",
                 "fromAddress": wallet_address,
-                "category": ["erc721", "erc20", "erc1155"],
+                "category": categories,  # Include all transaction categories
                 "withMetadata": True,
                 "excludeZeroValue": True
             }],
             "id": 1
         }
 
-        bt.logging.debug(f"Calling Alchemy for transactions for wallet: {wallet_address}.")
+        all_transfers = []  # List to hold all transfers
+        error_occurred = False  # To track if any errors occurred
 
-        try:
-            # Make the request with a timeout to avoid hanging
-            response = requests.post(url, json=payload, headers=headers, timeout=timeout)
-            response.raise_for_status()  # Raise exception for bad responses (4xx/5xx)
+        # Fetch transfers from multiple blockchains (Ethereum and Polygon)
+        for chain, url in alchemy_urls.items():
+            bt.logging.debug(f"Calling Alchemy for {chain} transactions for wallet: {wallet_address}.")
 
-            data = response.json()
+            # Retry logic with retries and delays
+            for attempt in range(retries):
+                try:
+                    # Make the request with a timeout to avoid hanging
+                    response = requests.post(url, json=payload, headers=headers, timeout=timeout)
+                    response.raise_for_status()  # Raise exception for bad responses (4xx/5xx)
 
-            # Return the list of transfers (empty list if none found), and no error occurred
-            return data.get('result', {}).get('transfers', []), False
+                    data = response.json()
+                    transfers = data.get('result', {}).get('transfers', [])
 
-        except requests.Timeout:
-            bt.logging.error(f"Timeout occurred while fetching transfers for {wallet_address}.")
-            return [], True  # Return an empty list and signal that an error occurred
+                    # Append transfers to the master list
+                    all_transfers.extend(transfers)
+                    error_occurred = False
 
-        except requests.RequestException as e:
-            bt.logging.error(f"Error fetching transfers for {wallet_address}: {e}")
-            return [], True  # Return an empty list and signal that an error occurred
+                    # Break out of retry loop if successful
+                    break
+
+                except requests.Timeout:
+                    bt.logging.error(f"Timeout occurred while fetching transfers for {wallet_address} on {chain}. Attempt {attempt + 1} of {retries}.")
+                    error_occurred = True
+
+                except requests.RequestException as e:
+                    bt.logging.error(f"Error fetching transfers for {wallet_address} on {chain}: {e}. Attempt {attempt + 1} of {retries}.")
+                    error_occurred = True
+
+                # Wait before retrying if an error occurred
+                if attempt < retries - 1:
+                    time.sleep(retry_delay)
+
+            # If after all retries it failed, log the error and return error_occurred = True
+            if error_occurred:
+                bt.logging.error(f"Failed to fetch transfers for {wallet_address} on {chain} after {retries} attempts.")
+                return [], True
+
+            # Small delay between chain queries to avoid rate limiting
+            time.sleep(1)
+
+        return all_transfers, error_occurred

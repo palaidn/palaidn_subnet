@@ -3,6 +3,7 @@ from typing import List, Dict, Any, Tuple
 import sys
 import bittensor as bt
 import sqlite3
+import json
 from palaidn.base.neuron import BaseNeuron
 from palaidn.protocol import PalaidnData, ScanWalletTransactions
 from palaidn.utils.sign_and_validate import verify_signature
@@ -48,6 +49,7 @@ class PalaidnMiner(BaseNeuron):
 
     """
     alchemy_api_key = 'empty'
+    config_file = ''
 
     default_db_path = "./data/miner.db"
 
@@ -401,6 +403,7 @@ class PalaidnMiner(BaseNeuron):
     def trace_transactions(self, wallet_address: str) -> List[Dict[str, Any]]:
         bt.logging.debug(f"Miner: transactions {wallet_address}")
         erc20_transfers = self.get_erc20_transfers(wallet_address)
+        bt.logging.debug(f"Miner: erc20_transfers {erc20_transfers}")
 
         tainted_wallets = set(wallet_address)
         trace_result = []
@@ -421,32 +424,76 @@ class PalaidnMiner(BaseNeuron):
             })
 
         return trace_result
+    
+    def load_config(self) -> Dict[str, Any]:
+        """Load the configuration file. Handle errors in reading the file."""
+        try:
+            with open(self.config_file, 'r') as file:
+                config = json.load(file)
+                bt.logging.debug(f"Configuration file {config}")
+                return config
+        except FileNotFoundError:
+            bt.logging.error(f"Configuration file {self.config_file} not found.")
+        except json.JSONDecodeError:
+            bt.logging.error(f"Error parsing the JSON configuration file {self.config_file}.")
+        except Exception as e:
+            bt.logging.error(f"Unexpected error while reading config file: {e}")
+        return {
+            "networks": [
+                {
+                    "name": "ethereum",
+                    "category": ["erc20", "erc721", "erc1155"]
+                }
+            ]
+        }
 
     def get_erc20_transfers(self, wallet_address: str) -> List[Dict[str, Any]]:
-        url = f"https://eth-mainnet.g.alchemy.com/v2/{self.alchemy_api_key}"
+        config = self.load_config()
 
-        # bt.logging.debug(f"get_erc20_transfers: wallet_address {wallet_address}")
-        
-        headers = {
-            'Content-Type': 'application/json'
-        }
+        if not config:
+            return []  # Return empty list if config failed to load
 
-        payload = {
-            "jsonrpc": "2.0",
-            "method": "alchemy_getAssetTransfers",
-            "params": [{
-                "fromBlock": "0x0",
-                "toBlock": "latest",
-                "fromAddress": wallet_address,
-                "category": ["erc721", "erc20", "erc1155"],
-                "withMetadata": True,
-                "excludeZeroValue": True
-            }],
-            "id": 1
-        }
+        combined_transfers = []
 
-        response = requests.post(url, json=payload, headers=headers)
-        data = response.json()
-        
-        bt.logging.debug(f"get_erc20_transfers: response {data}")
-        return data.get('result', {}).get('transfers', [])
+        # Iterate over each network in the configuration file
+        for network in config.get('networks', []):
+            # Define the URL based on the network
+            if network['name'] == 'ethereum':
+                url = f"https://eth-mainnet.g.alchemy.com/v2/{self.alchemy_api_key}"
+            elif network['name'] == 'polygon':
+                url = f"https://polygon-mainnet.g.alchemy.com/v2/{self.alchemy_api_key}"
+            else:
+                bt.logging.error(f"Unsupported network: {network['name']}")
+                continue
+
+            # Construct the headers and payload for the Alchemy API call
+            headers = {
+                'Content-Type': 'application/json'
+            }
+            payload = {
+                "jsonrpc": "2.0",
+                "method": "alchemy_getAssetTransfers",
+                "params": [{
+                    "fromBlock": "0x0",
+                    "toBlock": "latest",
+                    "fromAddress": wallet_address,
+                    "category": network.get('category', []),  # Use the category from the config
+                    "withMetadata": True,
+                    "excludeZeroValue": True
+                }],
+                "id": 1
+            }
+
+            # Make the POST request
+            try:
+                response = requests.post(url, json=payload, headers=headers)
+                response.raise_for_status()  # Raises an HTTPError for bad responses
+                data = response.json()
+                transfers = data.get('result', {}).get('transfers', [])
+                combined_transfers.extend(transfers)
+            except requests.exceptions.RequestException as e:
+                bt.logging.error(f"Request error for network {network['name']}: {e}")
+            except Exception as e:
+                bt.logging.error(f"Unexpected error during API call for {network['name']}: {e}")
+
+        return combined_transfers
