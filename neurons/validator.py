@@ -240,7 +240,7 @@ async def main(validator: PalaidnValidator):
             validator.step += 1
 
             # sleep_duration = random.randint(90, 180)
-            sleep_duration = 90
+            sleep_duration = 60
             bt.logging.debug(f"Sleeping for: {sleep_duration} seconds")
             await asyncio.sleep(sleep_duration)
 
