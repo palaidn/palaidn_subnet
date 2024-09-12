@@ -46,16 +46,7 @@ async def main(validator: PalaidnValidator):
     while True:
 
         try:
-            try:
-                block = validator.subtensor.block
-                bt.logging.debug(f"block: {block}")
-            except BrokenPipeError as e:
-
-                validator.subtensor = None
-                validator.subtensor = await validator.initialize_connection()
-                bt.logging.debug(f"restarted connection and proceed...")
-            except Exception as e:
-                bt.logging.error(f"Error retrieving block: {e}")
+            await validator.check_socket()
 
             log = (
                     f"Version:{version} ** | "
@@ -197,6 +188,9 @@ async def main(validator: PalaidnValidator):
                 validator.process_miner_data(
                     processed_uids=list_of_uids, transactions=responses
                 )
+
+            
+            await validator.check_socket()
 
             current_block = await validator.run_sync_in_async(lambda: validator.subtensor.block)
 

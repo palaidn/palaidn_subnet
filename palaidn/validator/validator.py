@@ -19,6 +19,7 @@ from dotenv import load_dotenv
 import os
 import asyncio
 import concurrent.futures
+import socket
 
 from palaidn.utils.fraud_data import FraudData
 
@@ -1085,3 +1086,45 @@ class PalaidnValidator(BaseNeuron):
             time.sleep(1)
 
         return all_transfers, error_occurred
+
+    async def check_socket(self):
+        """
+        Asynchronously checks the state of the WebSocket connection for the validator.
+        If the socket is broken, attempts to re-establish the connection.
+        """
+
+        try:
+            # Asynchronously check the socket for errors using getsockopt, wrapped in an executor to avoid blocking the event loop.
+            statesocket = await asyncio.get_event_loop().run_in_executor(
+                None, 
+                self.subtensor.substrate.websocket.sock.getsockopt,  # Fetch the socket option
+                socket.SOL_SOCKET,  # Check the socket-level option
+                socket.SO_ERROR  # Check for any socket errors
+            )
+
+            # If a socket error is detected (non-zero state), log the issue and attempt to restart the connection
+            if statesocket != 0:
+                bt.logging.debug(f"PIPE BROKEN... {statesocket}")
+                # Re-establish the connection by calling the async initialization method
+                self.subtensor = None
+                self.subtensor = await self.initialize_connection()
+                bt.logging.debug("Restarted connection and proceeding...")
+
+            # NOt needed really, but another check if socket works
+            # Attempt to retrieve the current block from the blockchain via the substensor connection
+            block = self.subtensor.block
+
+        except BrokenPipeError as e:
+            # If a BrokenPipeError occurs, reset the substensor and re-establish the connection
+            self.subtensor = None
+            self.subtensor = await self.initialize_connection()
+            bt.logging.debug("Restarted connection and proceeding...")
+
+            return False
+        except Exception as e:
+            # Log any other exceptions that may occur during block retrieval
+            bt.logging.error(f"Error retrieving block: {e}")
+
+            return False
+
+        return True
