@@ -31,8 +31,7 @@ async def main(validator: PalaidnValidator):
 
     fraud_data = FraudData()
 
-    # validator_rank = await validator.get_validators_ranked_by_stake()
-    validator_rank = 0
+    validator_rank = await validator.get_validators_ranked_by_stake()
     validator.target_group = validator_rank
 
     last_api_call = datetime.now()
