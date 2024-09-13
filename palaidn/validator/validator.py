@@ -963,6 +963,7 @@ class PalaidnValidator(BaseNeuron):
                             bt.logging.error(f"set_weights failed: {msg}")
                     except concurrent.futures.TimeoutError:
                         bt.logging.error(f"set_weights operation timed out after {timeout_seconds} seconds")
+                        return False  # Return after the timeout error
 
             else:
                 # If not enough blocks have passed, calculate the blocks to wait
@@ -970,11 +971,11 @@ class PalaidnValidator(BaseNeuron):
                 weights_rate_limit = self.subtensor.weights_rate_limit(self.neuron_config.netuid)
                 blocks_to_wait = weights_rate_limit - blocks_since_last_update
                 bt.logging.info(f"Need to wait {blocks_to_wait} more blocks to set weight.")
+                return False  # Return after the timeout error
 
         except Exception as e:
             bt.logging.error(f"Error setting weight: {str(e)}")
-
-
+            return False  # Return after the timeout error
         
         return False
 
