@@ -811,11 +811,12 @@ class PalaidnValidator(BaseNeuron):
                 len(uids_to_query), self.max_targets * (self.target_group + 1)
             )
             if start_idx == end_idx:
-                return [], []
+                return [], [], [], []
             if start_idx >= len(uids_to_query):
-                raise IndexError(
-                    "starting index for querying the miners is out-of-bounds"
-                )
+                if len(uids_to_query) > 0:
+                    start_idx = len(uids_to_query) -1
+                else:
+                    start_idx = 0
 
             if end_idx >= len(uids_to_query):
                 end_idx = len(uids_to_query)
