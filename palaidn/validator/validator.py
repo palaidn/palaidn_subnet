@@ -976,6 +976,11 @@ class PalaidnValidator(BaseNeuron):
 
         except Exception as e:
             bt.logging.error(f"Error setting weight: {str(e)}")
+
+            # Re-establish the connection by calling the async initialization method
+            self.subtensor = None
+            self.subtensor = await self.initialize_connection()
+            
             return False  # Return after the timeout error
         
         return False
@@ -1130,3 +1135,180 @@ class PalaidnValidator(BaseNeuron):
             return False
 
         return True
+    
+
+    async def generate_validator_data(self, from_address):
+        try:
+            # Connect to the database
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+
+            # Calculate the date 24 hours ago from now
+            last_24_hours = datetime.utcnow() - timedelta(hours=24)
+            last_24_hours_str = last_24_hours.strftime('%Y-%m-%dT%H:%M:%S')
+
+            # Query to fetch all transactions for the provided from_address, scanned in the last 24 hours
+            query = """
+            SELECT 
+                id, 
+                scanID, 
+                minerID, 
+                miner_wallet, 
+                scan_date, 
+                sender, 
+                receiver, 
+                transaction_hash, 
+                transaction_date, 
+                token_symbol, 
+                category, 
+                amount 
+            FROM wallet_transactions
+            WHERE sender = ? AND scan_date >= ?
+            """
+            
+            cursor.execute(query, (from_address, last_24_hours_str))
+            transactions = cursor.fetchall()
+
+            if not transactions:
+                return json.dumps({"transactions": []}, indent=4)
+
+            # Initialize the structure for the response
+            validator_data = {
+                "transactions": []
+            }
+
+            # Set to track unique transaction hashes
+            unique_hashes = set()
+
+            # Iterate over the fetched transactions and build the response structure
+            for tx in transactions:
+                try:
+                    transaction_hash = tx[7]  # Get the transaction hash
+
+                    # Skip the transaction if its hash is already in the set
+                    if transaction_hash in unique_hashes:
+                        continue
+
+                    # Add the hash to the set to mark it as seen
+                    unique_hashes.add(transaction_hash)
+
+                    # Assuming minerID and miner_wallet are comma-separated in the DB
+                    miner_id = list(map(int, tx[2].split(','))) if tx[2] else []
+                    miner_key = tx[3].split(',') if tx[3] else []
+
+                    transaction_data = {
+                        "validator_uid": self.uid,  
+                        "validator_key": self.wallet.hotkey.ss58_address,  
+                        "from_address": tx[5],
+                        "to_address": tx[6],
+                        "hash": transaction_hash,
+                        "miner_id": miner_id,
+                        "miner_key": miner_key,
+                        "scan_date": tx[4],  
+                        "transaction_date": tx[8],  
+                        "token_symbol": tx[9],
+                        "category": tx[10],
+                        "amount": tx[11]
+                    }
+                    validator_data["transactions"].append(transaction_data)
+                except (ValueError, IndexError) as e:
+                    # Handle any errors in processing individual transaction rows
+                    return json.dumps({"error": f"Error processing transaction: {str(e)}"}, indent=4)
+
+            return json.dumps(validator_data, indent=4)
+
+        except sqlite3.Error as e:
+            # Handle database connection or query errors
+            return json.dumps({"error": f"Database error: {str(e)}"}, indent=4)
+
+        except Exception as e:
+            # Handle any other unexpected errors
+            return json.dumps({"error": f"An unexpected error occurred: {str(e)}"}, indent=4)
+
+        finally:
+            # Close the database connection
+            if 'conn' in locals():
+                conn.close()
+
+
+
+
+    async def send_palaidn(self, api_key, transactions):
+        url = "https://api.palaidn.com/v1/data/validator"
+
+        bt.logging.debug(f"transactions: {transactions}")
+        bt.logging.info(f"Sending data to: {url}")
+        
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}"
+        }
+
+        try:
+            # Post the transactions to the API endpoint with a 60-second timeout
+            response = requests.post(url, headers=headers, data=json.dumps(transactions), timeout=60)
+
+            bt.logging.debug(f"Response status: {response.status_code}")
+
+            # Check if the request was successful
+            if response.status_code == 200:
+                wallet_data = response.json()
+
+                # Check if the response indicates any errors
+                is_error = wallet_data.get("status")
+
+                if is_error == 0:
+                    bt.logging.info("Data successfully saved to palaidn dashboard.")
+                    return True
+                else:
+                    bt.logging.debug(f"Data not saved: {wallet_data.get('message')}")
+                    return False
+            else:
+                bt.logging.error(f"Failed to post wallet data: {response.status_code}")
+                return False
+
+        except requests.exceptions.Timeout:
+            bt.logging.error("Request timed out after 60 seconds")
+            return False
+
+        except requests.exceptions.RequestException as e:
+            bt.logging.error(f"An error occurred during the request: {e}")
+            return False
+
+
+
+    async def process_and_send_data(self, from_address, api_key):
+        try:
+            # Generate validator data
+            valdata_json = await self.generate_validator_data(from_address)
+            
+            # Parse the JSON response
+            valdata = json.loads(valdata_json)
+            
+            # Check for error key in the data
+            if "error" in valdata:
+                bt.logging.error(f"Error found in generated validator data: {valdata['error']}")
+                return False
+            
+            # Check if there are no transactions
+            if not valdata.get("transactions"):
+                bt.logging.info("No transactions found to send.")
+                return False
+
+            # Proceed to send the transactions to the API
+            send_success = await self.send_palaidn(api_key, valdata)
+
+            if send_success:
+                bt.logging.info("Data successfully sent to palaidn.")
+                return True
+            else:
+                bt.logging.error("Failed to send data to palaidn.")
+                return False
+
+        except json.JSONDecodeError as e:
+            bt.logging.error(f"Error parsing JSON data: {e}")
+            return False
+
+        except Exception as e:
+            bt.logging.error(f"An unexpected error occurred: {e}")
+            return False

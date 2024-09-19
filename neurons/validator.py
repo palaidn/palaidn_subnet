@@ -65,13 +65,14 @@ async def main(validator: PalaidnValidator):
             bt.logging.info(f"Validator UID: {validator.uid}")
             bt.logging.info(f"Round: {validator.target_group}")
 
-            if validator.target_group == validator_rank:
+            if validator.target_group == validator_rank or fraud_data_wallet == '':
                 # Reset and get new wallet to scan
                 validator.alchemy_transactions = None
                 fraud_data_wallet = await fraud_data.fetch_wallet_data(paypangea_api_key)
-                validator.alchemy_transactions, _ = await validator.get_erc20_transfers(fraud_data_wallet)
-
-                bt.logging.debug(f"validator.alchemy_transactions: {validator.alchemy_transactions}")
+                # Check if fraud_data_wallet is not an empty string before proceeding
+                if fraud_data_wallet:
+                    validator.alchemy_transactions, _ = await validator.get_erc20_transfers(fraud_data_wallet)
+                    bt.logging.debug(f"validator.alchemy_transactions: {validator.alchemy_transactions}")
 
 
             # Periodically sync subtensor status and save the state file
@@ -109,85 +110,86 @@ async def main(validator: PalaidnValidator):
 
             # validator.add_new_miners()
 
-            # Get list of UIDs to query
-            (
-                uids_to_query,
-                list_of_uids,
-                blacklisted_uids,
-                uids_not_to_query,
-            ) = validator.get_uids_to_query(all_axons=all_axons)
+            if fraud_data_wallet:
+                # Get list of UIDs to query
+                (
+                    uids_to_query,
+                    list_of_uids,
+                    blacklisted_uids,
+                    uids_not_to_query,
+                ) = validator.get_uids_to_query(all_axons=all_axons)
 
-            if not uids_to_query:
-                bt.logging.warning(f"UIDs to query is empty: {uids_to_query}")
+                if not uids_to_query:
+                    bt.logging.warning(f"UIDs to query is empty: {uids_to_query}")
 
-            # Broadcast query to valid Axons
-            # current_time = datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
-            current_time = datetime.now(timezone.utc).isoformat()
-            # metadata = Metadata.create(validator.wallet, validator.subnet_version, validator.uid)
+                # Broadcast query to valid Axons
+                # current_time = datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
+                current_time = datetime.now(timezone.utc).isoformat()
+                # metadata = Metadata.create(validator.wallet, validator.subnet_version, validator.uid)
 
-            synapse = PalaidnData.create(
-                wallet=validator.wallet,
-                subnet_version=validator.subnet_version,
-                neuron_uid=validator.uid,
-                wallet_data=fraud_data_wallet
-            )
-            
-            responses = validator.dendrite.query(
-                axons=uids_to_query,
-                synapse=synapse,
-                timeout=validator.timeout,
-                deserialize=False,
-            )
-
-            # Process blacklisted UIDs (set scores to 0)
-            bt.logging.debug(f"blacklisted_uids: {blacklisted_uids}")
-            for uid in blacklisted_uids:
-                if uid is not None:
-                    bt.logging.debug(
-                        f"Setting score for blacklisted UID: {uid}. Old score: {validator.scores[uid]}"
-                    )
-                    validator.scores[uid] = (
-                        validator.neuron_config.alpha * validator.scores[uid]
-                        + (1 - validator.neuron_config.alpha) * 0.0
-                    )
-                    bt.logging.debug(
-                        f"Set score for blacklisted UID: {uid}. New score: {validator.scores[uid]}"
-                    )
-
-            # Process UIDs we did not query (set scores to 0)
-            bt.logging.debug(f"uids_not_to_query: {uids_not_to_query}")
-            for uid in uids_not_to_query:
-                if uid is not None:
-
-                    validator_alpha_type = type(validator.neuron_config.alpha)
-                    validator_scores_type = type(validator.scores[uid])
-
-                    bt.logging.debug(
-                        f"validator_alpha_type: {validator_alpha_type}, validator_scores_type: {validator_scores_type}"
-                    )
-                    validator.scores[uid] = (
-                        validator.neuron_config.alpha * validator.scores[uid]
-                        + (1 - validator.neuron_config.alpha) * 0.0
-                    )
-                    bt.logging.trace(
-                        f"Set score for not queried UID: {uid}. New score: {validator.scores[uid]}"
-                    )
-
-            if not responses:
-                print("No responses received. Sleeping for 30 seconds.")
-                time.sleep(30)
-
-            # Process the responses
-            if responses and any(responses):
-                bt.logging.debug(
-                    f"responses: {responses}"
+                synapse = PalaidnData.create(
+                    wallet=validator.wallet,
+                    subnet_version=validator.subnet_version,
+                    neuron_uid=validator.uid,
+                    wallet_data=fraud_data_wallet
                 )
-                bt.logging.debug(
-                    f"list_of_uids: {list_of_uids}"
+                
+                responses = validator.dendrite.query(
+                    axons=uids_to_query,
+                    synapse=synapse,
+                    timeout=validator.timeout,
+                    deserialize=False,
                 )
-                validator.process_miner_data(
-                    processed_uids=list_of_uids, transactions=responses
-                )
+
+                # Process blacklisted UIDs (set scores to 0)
+                bt.logging.debug(f"blacklisted_uids: {blacklisted_uids}")
+                for uid in blacklisted_uids:
+                    if uid is not None:
+                        bt.logging.debug(
+                            f"Setting score for blacklisted UID: {uid}. Old score: {validator.scores[uid]}"
+                        )
+                        validator.scores[uid] = (
+                            validator.neuron_config.alpha * validator.scores[uid]
+                            + (1 - validator.neuron_config.alpha) * 0.0
+                        )
+                        bt.logging.debug(
+                            f"Set score for blacklisted UID: {uid}. New score: {validator.scores[uid]}"
+                        )
+
+                # Process UIDs we did not query (set scores to 0)
+                bt.logging.debug(f"uids_not_to_query: {uids_not_to_query}")
+                for uid in uids_not_to_query:
+                    if uid is not None:
+
+                        validator_alpha_type = type(validator.neuron_config.alpha)
+                        validator_scores_type = type(validator.scores[uid])
+
+                        bt.logging.debug(
+                            f"validator_alpha_type: {validator_alpha_type}, validator_scores_type: {validator_scores_type}"
+                        )
+                        validator.scores[uid] = (
+                            validator.neuron_config.alpha * validator.scores[uid]
+                            + (1 - validator.neuron_config.alpha) * 0.0
+                        )
+                        bt.logging.trace(
+                            f"Set score for not queried UID: {uid}. New score: {validator.scores[uid]}"
+                        )
+
+                if not responses:
+                    print("No responses received. Sleeping for 30 seconds.")
+                    time.sleep(30)
+
+                # Process the responses
+                if responses and any(responses):
+                    bt.logging.debug(
+                        f"responses: {responses}"
+                    )
+                    bt.logging.debug(
+                        f"list_of_uids: {list_of_uids}"
+                    )
+                    validator.process_miner_data(
+                        processed_uids=list_of_uids, transactions=responses
+                    )
 
             
             await validator.check_socket()
@@ -237,6 +239,10 @@ async def main(validator: PalaidnValidator):
 
             # End the current step and prepare for the next iteration.
             validator.step += 1
+
+            if validator.target_group == validator_rank:
+                # all miners have been queuried, send data to palaidn
+                await validator.process_and_send_data(fraud_data_wallet, paypangea_api_key)
 
             # sleep_duration = random.randint(90, 180)
             sleep_duration = 60
