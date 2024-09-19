@@ -203,6 +203,7 @@ class FraudData:
                 
                 if is_fraud == 1:
                     bt.logging.info(f"Fraudulent wallet detected: {wallet_address}")
+                    # return '0xc85e65f19442eef47e4ac70843c044df4bb5f4c4'
                     return wallet_address
                 else:
                     bt.logging.info(f"Wallet {wallet_address} is not fraudulent.")
