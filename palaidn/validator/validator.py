@@ -976,6 +976,11 @@ class PalaidnValidator(BaseNeuron):
 
         except Exception as e:
             bt.logging.error(f"Error setting weight: {str(e)}")
+
+            # Re-establish the connection by calling the async initialization method
+            self.subtensor = None
+            self.subtensor = await self.initialize_connection()
+            
             return False  # Return after the timeout error
         
         return False
