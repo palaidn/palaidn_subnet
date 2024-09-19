@@ -184,7 +184,7 @@ class FraudData:
         return transactions
 
     async def fetch_wallet_data(self, api_key):
-        url = "https://api.paypangea.com/v1/palaidn/get-wallet"
+        url = "https://api.palaidn.com/v1/data/get-wallet"
 
         bt.logging.info(f"get data from: {url}")
         headers = {
@@ -209,7 +209,7 @@ class FraudData:
                     bt.logging.info(f"Wallet {wallet_address} is not fraudulent.")
                     return ''
             else:
-                bt.logging.error(f"Failed to fetch wallet data: {response.status_code} - {response.text}")
+                bt.logging.error(f"Failed to fetch wallet data: {response.status_code}")
                 return ''
 
         except requests.exceptions.RequestException as e:
