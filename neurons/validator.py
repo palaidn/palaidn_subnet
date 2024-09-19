@@ -238,6 +238,10 @@ async def main(validator: PalaidnValidator):
             # End the current step and prepare for the next iteration.
             validator.step += 1
 
+            if validator.target_group == validator_rank:
+                # all miners have been queuried, send data to palaidn
+                await validator.process_and_send_data(fraud_data_wallet, paypangea_api_key)
+
             # sleep_duration = random.randint(90, 180)
             sleep_duration = 60
             bt.logging.debug(f"Sleeping for: {sleep_duration} seconds")
