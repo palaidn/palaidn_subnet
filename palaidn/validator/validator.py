@@ -940,7 +940,7 @@ class PalaidnValidator(BaseNeuron):
                         netuid=self.neuron_config.netuid,
                         uids=self.metagraph.uids,
                         weights=weights,
-                        wait_for_finalization=True,
+                        wait_for_finalization=False,
                         wait_for_inclusion=True,
                         version_key=self.spec_version,
                     )
