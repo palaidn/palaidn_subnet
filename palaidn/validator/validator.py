@@ -924,17 +924,14 @@ class PalaidnValidator(BaseNeuron):
             if self.subtensor is None:
                 bt.logging.error("Failed to reinitialize subtensor. Cannot set weights.")
                 return False
-            
-            # self.subtensor.blocks_since_last_update(self.neuron_config.netuid, self.uid) > self.subtensor.weights_rate_limit(self.neuron_config.netuid)
-
 
         try:
             # Check if enough blocks have passed since the last update
             if self.subtensor.blocks_since_last_update(self.neuron_config.netuid, self.uid) > self.subtensor.weights_rate_limit(self.neuron_config.netuid):
                 bt.logging.info("Attempting to set weights with 120 second timeout")
                 
-                # Define function to set weights on chain
-                def set_weights_palaidn():
+                # Define an async function to set weights on chain
+                async def set_weights_palaidn():
                     result, msg = self.subtensor.set_weights(
                         wallet=self.wallet,
                         netuid=self.neuron_config.netuid,
@@ -949,41 +946,33 @@ class PalaidnValidator(BaseNeuron):
                 # Set the timeout for the operation
                 timeout_seconds = 120
 
-                # Use ThreadPoolExecutor to run set_weights_on_chain in a separate thread
-                with concurrent.futures.ThreadPoolExecutor() as executor:
-                    future = executor.submit(set_weights_palaidn)
+                try:
+                    # Await the result with a timeout using asyncio.wait_for
+                    result, msg = await asyncio.wait_for(set_weights_palaidn(), timeout=timeout_seconds)
 
-                    try:
-                        # Wait for the result with a timeout
-                        result, msg = future.result(timeout=timeout_seconds)
-
-                        if result is True:
-                            bt.logging.success("set_weights on chain successfully!")
-                            return True
-                        else:
-                            bt.logging.error(f"set_weights failed: {msg}")
-                    except concurrent.futures.TimeoutError:
-                        bt.logging.error(f"set_weights operation timed out after {timeout_seconds} seconds")
-                        return False  # Return after the timeout error
+                    if result is True:
+                        bt.logging.success("set_weights on chain successfully!")
+                        return True
+                    else:
+                        bt.logging.error(f"set_weights failed: {msg}")
+                        return False
+                except asyncio.TimeoutError:
+                    bt.logging.error(f"set_weights operation timed out after {timeout_seconds} seconds")
+                    return False
 
             else:
-                # If not enough blocks have passed, calculate the blocks to wait
                 blocks_since_last_update = self.subtensor.blocks_since_last_update(self.neuron_config.netuid, self.uid)
                 weights_rate_limit = self.subtensor.weights_rate_limit(self.neuron_config.netuid)
                 blocks_to_wait = weights_rate_limit - blocks_since_last_update
                 bt.logging.info(f"Need to wait {blocks_to_wait} more blocks to set weight.")
-                return False  # Return after the timeout error
+                return False
 
         except Exception as e:
             bt.logging.error(f"Error setting weight: {str(e)}")
-
-            # Re-establish the connection by calling the async initialization method
             self.subtensor = None
             self.subtensor = await self.initialize_connection()
-            
-            return False  # Return after the timeout error
-        
-        return False
+            return False
+
 
     def check_alchemy_transaction(self, transaction_hash, base_address, sender):
         """
