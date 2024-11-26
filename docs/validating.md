@@ -10,7 +10,7 @@ Paypangea is a free decentralised wallet that we use for web3 authentication. Yo
 
 4. **Run the validator setup**:
 
-Run the following command and follow the prompts to complete the miner setup:
+Run the following command and follow the prompts to complete the validator setup:
 ```bash
 bash ./scripts/start_validator.sh
 ```
