@@ -125,7 +125,6 @@ btcli subnet list --subtensor.chain_endpoint ws://127.0.0.1:9946
 btcli wallet overview --wallet.name validator --subtensor.chain_endpoint ws://127.0.0.1:9946 --no_prompt
 btcli wallet overview --wallet.name miner --subtensor.chain_endpoint ws://127.0.0.1:9946 --no_prompt
 
-cd ../bittensor-subnet-template
 
 
 # Check if inside a tmux session
