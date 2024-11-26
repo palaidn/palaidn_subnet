@@ -215,27 +215,28 @@ async def main(validator: PalaidnValidator):
                 
             if blocks_to_wait < 0 or validator.step % 50 == 0:
                 # Periodically update the weights on the Bittensor blockchain.
-                try:
-                    bt.logging.info("Attempting to update weights")
-                    if validator.subtensor is None:
-                        bt.logging.warning("Subtensor is None. Attempting to reinitialize...")
-                        validator.subtensor = await validator.initialize_connection()
+                validator.update_weights()
+                # try:
+                #     bt.logging.info("Attempting to update weights")
+                #     if validator.subtensor is None:
+                #         bt.logging.warning("Subtensor is None. Attempting to reinitialize...")
+                #         validator.subtensor = await validator.initialize_connection()
                     
-                    if validator.subtensor is not None:
-                        success = await validator.set_weights()
-                        if success:
-                            # Update validators knowledge of the last updated block
-                            validator.last_updated_block = await validator.run_sync_in_async(lambda: validator.subtensor.block)
+                #     if validator.subtensor is not None:
+                #         success = await validator.set_weights()
+                #         if success:
+                #             # Update validators knowledge of the last updated block
+                #             validator.last_updated_block = await validator.run_sync_in_async(lambda: validator.subtensor.block)
 
-                            validator.save_state()
-                            bt.logging.info("Successfully updated weights and last updated block")
-                        else:
-                            bt.logging.info("Failed to set weights, continuing with next iteration.")
-                    else:
-                        bt.logging.error("Failed to reinitialize subtensor. Skipping weight update.")
-                except Exception as e:
-                    bt.logging.error(f"Error during weight update process: {str(e)}")
-                    bt.logging.warning("Continuing with next iteration despite weight update failure.")
+                #             validator.save_state()
+                #             bt.logging.info("Successfully updated weights and last updated block")
+                #         else:
+                #             bt.logging.info("Failed to set weights, continuing with next iteration.")
+                #     else:
+                #         bt.logging.error("Failed to reinitialize subtensor. Skipping weight update.")
+                # except Exception as e:
+                #     bt.logging.error(f"Error during weight update process: {str(e)}")
+                #     bt.logging.warning("Continuing with next iteration despite weight update failure.")
 
             # End the current step and prepare for the next iteration.
             validator.step += 1

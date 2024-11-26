@@ -23,6 +23,8 @@ import socket
 
 from palaidn.utils.fraud_data import FraudData
 
+from palaidn.utils.system import timeout_with_multiprocess
+
 # Get the current file's directory
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -895,9 +897,20 @@ class PalaidnValidator(BaseNeuron):
         self.scores = earnings
 
         return earnings
+    
+    @timeout_with_multiprocess(seconds=50)
+    def set_weights(self, netuid, wallet, uids, weights, version_key):
+        return self.subtensor.set_weights(
+            netuid=netuid,
+            wallet=wallet,
+            uids=uids,
+            weights=weights,
+            wait_for_inclusion=True,
+            version_key=version_key,
+        )
 
-    async def set_weights(self):
-        bt.logging.info("Entering set_weights method")
+    def update_weights(self):
+        bt.logging.info("Entering update_weights method")
 
         # Calculate miner scores and normalize weights as before
         earnings = self.calculate_miner_scores()
@@ -918,47 +931,60 @@ class PalaidnValidator(BaseNeuron):
             bt.logging.error("Insufficient stake. Failed in setting weights.")
             return False
 
-        if self.subtensor is None:
-            bt.logging.warning("Subtensor is None. Attempting to reinitialize...")
-            self.subtensor = await self.initialize_connection()
-            if self.subtensor is None:
-                bt.logging.error("Failed to reinitialize subtensor. Cannot set weights.")
-                return False
+        # if self.subtensor is None:
+        #     bt.logging.warning("Subtensor is None. Attempting to reinitialize...")
+        #     self.subtensor = await self.initialize_connection()
+        #     if self.subtensor is None:
+        #         bt.logging.error("Failed to reinitialize subtensor. Cannot set weights.")
+        #         return False
 
         try:
             # Check if enough blocks have passed since the last update
             if self.subtensor.blocks_since_last_update(self.neuron_config.netuid, self.uid) > self.subtensor.weights_rate_limit(self.neuron_config.netuid):
-                bt.logging.info("Attempting to set weights with 120 second timeout")
+                bt.logging.info("Attempting to set weights with 50 second timeout")
                 
-                # Define an async function to set weights on chain
-                async def set_weights_palaidn():
-                    result, msg = self.subtensor.set_weights(
-                        wallet=self.wallet,
-                        netuid=self.neuron_config.netuid,
-                        uids=self.metagraph.uids,
-                        weights=weights,
-                        wait_for_finalization=False,
-                        wait_for_inclusion=True,
-                        version_key=self.spec_version,
-                    )
-                    return result, msg
+                # # Define an async function to set weights on chain
+                # async def set_weights_palaidn():
+                #     result, msg = self.subtensor.set_weights(
+                #         wallet=self.wallet,
+                #         netuid=self.neuron_config.netuid,
+                #         uids=self.metagraph.uids,
+                #         weights=weights,
+                #         wait_for_finalization=False,
+                #         wait_for_inclusion=True,
+                #         version_key=self.spec_version,
+                #     )
+                #     return result, msg
 
-                # Set the timeout for the operation
-                timeout_seconds = 120
+                # # Set the timeout for the operation
+                # timeout_seconds = 120
 
-                try:
-                    # Await the result with a timeout using asyncio.wait_for
-                    result, msg = await asyncio.wait_for(set_weights_palaidn(), timeout=timeout_seconds)
+                # try:
+                #     # Await the result with a timeout using asyncio.wait_for
+                #     result, msg = await asyncio.wait_for(set_weights_palaidn(), timeout=timeout_seconds)
 
-                    if result is True:
-                        bt.logging.success("set_weights on chain successfully!")
-                        return True
-                    else:
-                        bt.logging.error(f"set_weights failed: {msg}")
-                        return False
-                except asyncio.TimeoutError:
-                    bt.logging.error(f"set_weights operation timed out after {timeout_seconds} seconds")
-                    return False
+                #     if result is True:
+                #         bt.logging.success("set_weights on chain successfully!")
+                #         return True
+                #     else:
+                #         bt.logging.error(f"set_weights failed: {msg}")
+                #         return False
+                # except asyncio.TimeoutError:
+                #     bt.logging.error(f"set_weights operation timed out after {timeout_seconds} seconds")
+                #     return False
+
+                success = self.set_weights(
+                    netuid=self.neuron_config.netuid,
+                    wallet=self.wallet,
+                    uids=self.metagraph.uids,
+                    weights=weights,
+                    version_key=self.spec_version,
+                )
+                if success:
+                    bt.logging.success("update_weights on chain successfully!")
+                    return True
+                bt.logging.error("Failed to set weights")
+                return False
 
             else:
                 blocks_since_last_update = self.subtensor.blocks_since_last_update(self.neuron_config.netuid, self.uid)
@@ -969,8 +995,8 @@ class PalaidnValidator(BaseNeuron):
 
         except Exception as e:
             bt.logging.error(f"Error setting weight: {str(e)}")
-            self.subtensor = None
-            self.subtensor = await self.initialize_connection()
+            # self.subtensor = None
+            # self.subtensor = await self.initialize_connection()
             return False
 
 
